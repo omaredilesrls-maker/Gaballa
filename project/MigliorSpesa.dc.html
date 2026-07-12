@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Inter', system-ui, sans-serif; }
+    ::-webkit-scrollbar { display: none; }
+    a { color: #146C43; }
+    a:hover { color: #0B4D30; }
+  </style>
+</helmet>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402,874" style="position:relative">
+  <div style="height:100%;display:flex;flex-direction:column;background:#F6F8F4;font-family:'Inter',system-ui,sans-serif;color:#12241C">
+
+    <!-- ============ LOCATION SCREEN ============ -->
+    <sc-if value="{{ isLocation }}" hint-placeholder-val="{{ true }}">
+      <div style="height:100%;display:flex;flex-direction:column;background:linear-gradient(160deg,#146C43,#0B4D30)">
+        <div style="height:62px;flex-shrink:0"></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 28px;text-align:center;gap:18px">
+          <div style="width:64px;height:64px;border-radius:20px;background:rgba(255,255,255,0.14);display:flex;align-items:center;justify-content:center">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-6.6 7-12a7 7 0 10-14 0c0 5.4 7 12 7 12z" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="9" r="2.6" stroke="#fff" stroke-width="1.8"/></svg>
+          </div>
+          <div>
+            <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:28px;color:#fff;letter-spacing:-0.3px">MigliorSpesa</div>
+            <div style="font-size:15px;color:rgba(255,255,255,0.75);margin-top:8px;line-height:1.5">Confronta i prezzi dei supermercati vicino a te e trova sempre l'offerta migliore.</div>
+          </div>
+        </div>
+        <div style="background:#fff;border-radius:28px 28px 0 0;padding:26px 22px 40px;display:flex;flex-direction:column;gap:14px">
+          <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:17px;color:#12241C">Dove fai la spesa?</div>
+          <button onClick="{{ onUseGps }}" style="display:flex;align-items:center;justify-content:center;gap:8px;height:50px;border:none;border-radius:14px;background:#1E9E5C;color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px;cursor:pointer">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-6.6 7-12a7 7 0 10-14 0c0 5.4 7 12 7 12z" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="9" r="2.4" fill="#fff"/></svg>
+            Usa la mia posizione
+          </button>
+          <div style="display:flex;align-items:center;gap:10px;color:#B8C0BB;font-size:12px"><div style="flex:1;height:1px;background:#EEF1EC"></div>oppure<div style="flex:1;height:1px;background:#EEF1EC"></div></div>
+          <input value="{{ capInput }}" onChange="{{ onCapChange }}" placeholder="Inserisci CAP o città" style="height:50px;border-radius:14px;border:1.5px solid #E4E9E2;padding:0 16px;font-size:15px;font-family:'Inter',sans-serif;outline:none;color:#12241C"/>
+          <button onClick="{{ onConfirmLocation }}" style="height:50px;border:1.5px solid #146C43;border-radius:14px;background:#fff;color:#146C43;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15px;cursor:pointer">Conferma</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ============ HOME SCREEN ============ -->
+    <sc-if value="{{ isHome }}">
+      <div style="height:100%;display:flex;flex-direction:column">
+        <div style="background:linear-gradient(160deg,#146C43,#0B4D30);flex-shrink:0;padding:62px 20px 20px;display:flex;align-items:center;justify-content:space-between">
+          <button onClick="{{ goLocation }}" style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.14);border:none;border-radius:999px;padding:8px 14px;cursor:pointer">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-6.6 7-12a7 7 0 10-14 0c0 5.4 7 12 7 12z" stroke="#fff" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="9" r="2.4" fill="#fff"/></svg>
+            <span style="color:#fff;font-size:13px;font-weight:600;font-family:'Inter',sans-serif">{{ locationLabel }}</span>
+            <svg width="9" height="9" viewBox="0 0 8 14"><path d="M1 1l6 6-6 6" stroke="rgba(255,255,255,0.7)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div style="width:36px;height:36px;border-radius:999px;background:rgba(255,255,255,0.14);display:flex;align-items:center;justify-content:center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 3a5 5 0 00-5 5v3.4c0 .7-.3 1.4-.8 1.9L5 15h14l-1.2-1.7c-.5-.5-.8-1.2-.8-1.9V8a5 5 0 00-5-5z" stroke="#fff" stroke-width="1.7" stroke-linejoin="round"/><path d="M10 18a2 2 0 004 0" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+        <div style="flex:1;overflow:auto;background:#F6F8F4;border-radius:20px 20px 0 0;margin-top:-14px;padding:22px 20px 100px;display:flex;flex-direction:column;gap:22px">
+          <div>
+            <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:21px;color:#12241C">Ciao! 👋</div>
+            <div style="font-size:13.5px;color:#6B7A72;margin-top:3px">Ecco i risparmi vicino a te oggi</div>
+          </div>
+          <button onClick="{{ goSearch }}" style="display:flex;align-items:center;gap:10px;height:48px;border-radius:14px;border:1.5px solid #E4E9E2;background:#fff;padding:0 16px;cursor:pointer;text-align:left">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#6B7A72" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="#6B7A72" stroke-width="2" stroke-linecap="round"/></svg>
+            <span style="color:#9AA39D;font-size:14.5px">Cerca un prodotto…</span>
+          </button>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:14.5px;color:#12241C">Categorie</div>
+            <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:2px">
+              <sc-for list="{{ categories }}" as="cat" hint-placeholder-count="6">
+                <button onClick="{{ cat.onClick }}" style="flex-shrink:0;padding:9px 15px;border-radius:999px;border:1.5px solid {{ cat.border }};background:{{ cat.bg }};color:{{ cat.color }};font-size:13px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;white-space:nowrap">{{ cat.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+              <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:14.5px;color:#12241C">Offerte migliori nella tua zona</div>
+            </div>
+            <sc-for list="{{ homeDeals }}" as="p" hint-placeholder-count="4">
+              <button onClick="{{ p.onOpen }}" style="display:flex;align-items:center;gap:12px;background:#fff;border:1px solid rgba(11,77,48,0.08);border-radius:16px;padding:12px;cursor:pointer;text-align:left;width:100%">
+                <div style="width:52px;height:52px;border-radius:12px;background:{{ p.tileBg }};color:{{ p.tileColor }};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;font-family:'Plus Jakarta Sans',sans-serif;flex-shrink:0">{{ p.initials }}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:14.5px;font-weight:600;color:#12241C;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.name }}</div>
+                  <div style="font-size:12px;color:#6B7A72;margin-top:2px">{{ p.unit }} · da <span style="color:#146C43;font-weight:700">{{ p.minPriceLabel }}</span> da {{ p.minStoreName }}</div>
+                </div>
+                <div style="flex-shrink:0;background:#FFF1EA;color:#FF7A45;font-size:11.5px;font-weight:800;padding:5px 9px;border-radius:8px;font-family:'Plus Jakarta Sans',sans-serif">-{{ p.savingsPctLabel }}</div>
+              </button>
+            </sc-for>
+          </div>
+          <sc-if value="{{ hasCartItems }}">
+            <button onClick="{{ goList }}" style="display:flex;align-items:center;gap:12px;background:#0B4D30;border:none;border-radius:16px;padding:16px;cursor:pointer;text-align:left">
+              <div style="width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,0.14);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 6h15l-1.5 9h-12L6 6zm0 0L5 3H2" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/><circle cx="9" cy="20" r="1.4" fill="#fff"/><circle cx="17" cy="20" r="1.4" fill="#fff"/></svg>
+              </div>
+              <div style="flex:1">
+                <div style="color:#fff;font-size:14px;font-weight:700;font-family:'Plus Jakarta Sans',sans-serif">{{ cartCount }} articoli nella lista</div>
+                <div style="color:rgba(255,255,255,0.7);font-size:12.5px;margin-top:2px">Risparmi {{ cartTotalSavingsLabel }} da {{ cartBestStoreName }}</div>
+              </div>
+              <svg width="8" height="14" viewBox="0 0 8 14"><path d="M1 1l6 6-6 6" stroke="rgba(255,255,255,0.6)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ============ SEARCH SCREEN ============ -->
+    <sc-if value="{{ isSearch }}">
+      <div style="height:100%;display:flex;flex-direction:column">
+        <div style="background:linear-gradient(160deg,#146C43,#0B4D30);flex-shrink:0;padding:62px 20px 18px;display:flex;align-items:center;gap:12px">
+          <button onClick="{{ goHome }}" style="width:34px;height:34px;border-radius:999px;background:rgba(255,255,255,0.14);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">
+            <svg width="9" height="15" viewBox="0 0 8 14"><path d="M7 1L1 7l6 6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:19px;color:#fff">Cerca</div>
+        </div>
+        <div style="flex:1;overflow:auto;background:#F6F8F4;border-radius:20px 20px 0 0;margin-top:-8px;padding:18px 20px 100px;display:flex;flex-direction:column;gap:16px">
+          <div style="display:flex;align-items:center;gap:10px;height:48px;border-radius:14px;border:1.5px solid #E4E9E2;background:#fff;padding:0 16px">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#6B7A72" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="#6B7A72" stroke-width="2" stroke-linecap="round"/></svg>
+            <input value="{{ searchQuery }}" onChange="{{ onSearchChange }}" placeholder="Es. pasta, latte, caffè…" autoFocus="true" style="border:none;outline:none;flex:1;font-size:14.5px;font-family:'Inter',sans-serif;color:#12241C;background:transparent"/>
+          </div>
+          <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:2px">
+            <sc-for list="{{ categories }}" as="cat" hint-placeholder-count="6">
+              <button onClick="{{ cat.onClick }}" style="flex-shrink:0;padding:8px 14px;border-radius:999px;border:1.5px solid {{ cat.border }};background:{{ cat.bg }};color:{{ cat.color }};font-size:12.5px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;white-space:nowrap">{{ cat.label }}</button>
+            </sc-for>
+          </div>
+          <div style="font-size:12.5px;color:#6B7A72;font-weight:600">{{ resultsCountLabel }}</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ filteredProducts }}" as="p" hint-placeholder-count="6">
+              <button onClick="{{ p.onOpen }}" style="display:flex;align-items:center;gap:12px;background:#fff;border:1px solid rgba(11,77,48,0.08);border-radius:16px;padding:12px;cursor:pointer;text-align:left;width:100%">
+                <div style="width:48px;height:48px;border-radius:12px;background:{{ p.tileBg }};color:{{ p.tileColor }};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;font-family:'Plus Jakarta Sans',sans-serif;flex-shrink:0">{{ p.initials }}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:14.5px;font-weight:600;color:#12241C">{{ p.name }}</div>
+                  <div style="font-size:12px;color:#6B7A72;margin-top:2px">{{ p.unit }} · {{ p.category }}</div>
+                </div>
+                <div style="flex-shrink:0;text-align:right">
+                  <div style="font-size:11px;color:#9AA39D">da</div>
+                  <div style="font-size:15px;font-weight:800;color:#146C43;font-family:'Plus Jakarta Sans',sans-serif">{{ p.minPriceLabel }}</div>
+                </div>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ============ PRODUCT DETAIL SCREEN ============ -->
+    <sc-if value="{{ isDetail }}">
+      <div style="height:100%;display:flex;flex-direction:column">
+        <div style="background:linear-gradient(160deg,#146C43,#0B4D30);flex-shrink:0;padding:62px 20px 20px;display:flex;align-items:center;gap:12px">
+          <button onClick="{{ goBack }}" style="width:34px;height:34px;border-radius:999px;background:rgba(255,255,255,0.14);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">
+            <svg width="9" height="15" viewBox="0 0 8 14"><path d="M7 1L1 7l6 6" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:17px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ selectedProduct.name }}</div>
+        </div>
+        <div style="flex:1;overflow:auto;background:#F6F8F4;border-radius:20px 20px 0 0;margin-top:-8px;padding:22px 20px 110px;display:flex;flex-direction:column;gap:20px">
+          <div style="display:flex;align-items:center;gap:16px">
+            <div style="width:76px;height:76px;border-radius:18px;background:{{ selectedProduct.tileBg }};color:{{ selectedProduct.tileColor }};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:19px;font-family:'Plus Jakarta Sans',sans-serif;flex-shrink:0">{{ selectedProduct.initials }}</div>
+            <div>
+              <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:18px;color:#12241C">{{ selectedProduct.name }}</div>
+              <div style="font-size:13px;color:#6B7A72;margin-top:3px">{{ selectedProduct.unit }} · {{ selectedProduct.category }}</div>
+            </div>
+          </div>
+          <div style="background:#EAF7EF;border-radius:14px;padding:13px 16px;font-size:13px;color:#146C43;line-height:1.5">
+            Risparmi <b>{{ selectedProduct.savingsLabel }}</b> ({{ selectedProduct.savingsPctLabel }}) scegliendo <b>{{ selectedProduct.minStoreName }}</b> invece del prezzo più alto in zona.
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:14.5px;color:#12241C">Confronto prezzi vicino a te</div>
+            <sc-for list="{{ storeRows }}" as="row" hint-placeholder-count="6">
+              <div style="display:flex;align-items:center;gap:12px;background:#fff;border:1.5px solid {{ row.borderColor }};border-radius:14px;padding:12px 14px">
+                <div style="width:38px;height:38px;border-radius:10px;background:{{ row.storeColor }};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;flex-shrink:0">{{ row.storeInitials }}</div>
+                <div style="flex:1">
+                  <div style="font-size:14px;font-weight:700;color:#12241C">{{ row.storeName }}</div>
+                  <div style="font-size:11.5px;color:#9AA39D;margin-top:1px">{{ row.distanceLabel }}</div>
+                </div>
+                <sc-if value="{{ row.isBest }}">
+                  <div style="background:#1E9E5C;color:#fff;font-size:10.5px;font-weight:800;padding:3px 8px;border-radius:7px;margin-right:8px;font-family:'Plus Jakarta Sans',sans-serif">MIGLIORE</div>
+                </sc-if>
+                <div style="text-align:right">
+                  <div style="font-size:16px;font-weight:800;color:{{ row.priceColor }};font-family:'Plus Jakarta Sans',sans-serif">{{ row.priceLabel }}</div>
+                  <sc-if value="{{ row.showDelta }}"><div style="font-size:11px;color:#C77F1A;margin-top:1px">+{{ row.deltaLabel }}</div></sc-if>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="position:absolute;left:0;right:0;bottom:0;background:#fff;border-top:1px solid rgba(11,77,48,0.08);padding:14px 20px 30px;display:flex;align-items:center;gap:12px">
+          <div style="display:flex;align-items:center;gap:10px;background:#F6F8F4;border-radius:12px;padding:6px 10px">
+            <button onClick="{{ onQtyMinus }}" style="width:28px;height:28px;border-radius:8px;border:none;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,0.08);font-size:16px;font-weight:700;color:#146C43;cursor:pointer">−</button>
+            <div style="min-width:16px;text-align:center;font-weight:700;font-size:14px">{{ detailQty }}</div>
+            <button onClick="{{ onQtyPlus }}" style="width:28px;height:28px;border-radius:8px;border:none;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,0.08);font-size:16px;font-weight:700;color:#146C43;cursor:pointer">+</button>
+          </div>
+          <button onClick="{{ onAddToList }}" style="flex:1;height:48px;border:none;border-radius:14px;background:#1E9E5C;color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:14.5px;cursor:pointer">{{ addButtonLabel }}</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ============ LISTA DELLA SPESA SCREEN ============ -->
+    <sc-if value="{{ isList }}">
+      <div style="height:100%;display:flex;flex-direction:column">
+        <div style="background:linear-gradient(160deg,#146C43,#0B4D30);flex-shrink:0;padding:62px 20px 20px">
+          <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:19px;color:#fff">Lista della spesa</div>
+          <div style="font-size:12.5px;color:rgba(255,255,255,0.7);margin-top:3px">{{ cartCount }} articoli</div>
+        </div>
+        <div style="flex:1;overflow:auto;background:#F6F8F4;border-radius:20px 20px 0 0;margin-top:-8px;padding:20px 20px 100px;display:flex;flex-direction:column;gap:20px">
+          <sc-if value="{{ hasCartItems }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column;gap:20px">
+              <div style="background:#0B4D30;border-radius:16px;padding:16px">
+                <div style="color:rgba(255,255,255,0.7);font-size:12px;font-weight:600">Il supermercato più conveniente per tutta la lista</div>
+                <div style="color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:19px;margin-top:6px">{{ cartBestStoreName }} · {{ cartBestTotalLabel }}</div>
+                <div style="color:#8FE3B8;font-size:12.5px;font-weight:700;margin-top:4px">Risparmi {{ cartTotalSavingsLabel }} rispetto al più caro</div>
+                <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px">
+                  <sc-for list="{{ cartTotals }}" as="t" hint-placeholder-count="6">
+                    <div style="display:flex;align-items:center;gap:10px">
+                      <div style="width:64px;font-size:11.5px;color:rgba(255,255,255,0.75);flex-shrink:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">{{ t.storeName }}</div>
+                      <div style="flex:1;height:8px;border-radius:5px;background:rgba(255,255,255,0.12);overflow:hidden"><div style="height:100%;width:{{ t.barPct }}%;background:{{ t.barColor }};border-radius:5px"></div></div>
+                      <div style="width:56px;text-align:right;font-size:12px;font-weight:700;color:#fff;flex-shrink:0">{{ t.totalLabel }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <sc-for list="{{ cartItems }}" as="it" hint-placeholder-count="4">
+                  <div style="display:flex;align-items:center;gap:12px;background:#fff;border:1px solid rgba(11,77,48,0.08);border-radius:16px;padding:12px">
+                    <div style="width:46px;height:46px;border-radius:11px;background:{{ it.tileBg }};color:{{ it.tileColor }};display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12.5px;font-family:'Plus Jakarta Sans',sans-serif;flex-shrink:0">{{ it.initials }}</div>
+                    <div style="flex:1;min-width:0">
+                      <div style="font-size:14px;font-weight:600;color:#12241C">{{ it.name }}</div>
+                      <div style="font-size:11.5px;color:#6B7A72;margin-top:2px">da {{ it.bestStoreName }} · {{ it.unitPriceLabel }}</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;background:#F6F8F4;border-radius:10px;padding:5px 8px">
+                      <button onClick="{{ it.onMinus }}" style="width:22px;height:22px;border-radius:6px;border:none;background:#fff;font-size:14px;font-weight:700;color:#146C43;cursor:pointer">−</button>
+                      <div style="min-width:14px;text-align:center;font-weight:700;font-size:13px">{{ it.qty }}</div>
+                      <button onClick="{{ it.onPlus }}" style="width:22px;height:22px;border-radius:6px;border:none;background:#fff;font-size:14px;font-weight:700;color:#146C43;cursor:pointer">+</button>
+                    </div>
+                    <button onClick="{{ it.onRemove }}" style="width:28px;height:28px;border-radius:8px;border:none;background:transparent;color:#C4453B;cursor:pointer;flex-shrink:0;font-size:16px">✕</button>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ isCartEmpty }}">
+            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:60px 20px;text-align:center">
+              <div style="width:64px;height:64px;border-radius:20px;background:#EAF7EF;display:flex;align-items:center;justify-content:center">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M6 6h15l-1.5 9h-12L6 6zm0 0L5 3H2" stroke="#146C43" stroke-width="1.8" stroke-linejoin="round"/><circle cx="9" cy="20" r="1.4" fill="#146C43"/><circle cx="17" cy="20" r="1.4" fill="#146C43"/></svg>
+              </div>
+              <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:15.5px;color:#12241C">La tua lista è vuota</div>
+              <div style="font-size:13px;color:#6B7A72;max-width:220px">Aggiungi prodotti per confrontare i prezzi tra i supermercati</div>
+              <button onClick="{{ goSearch }}" style="height:44px;padding:0 20px;border:none;border-radius:12px;background:#1E9E5C;color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:14px;cursor:pointer">Cerca prodotti</button>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ============ PROFILO SCREEN ============ -->
+    <sc-if value="{{ isProfilo }}">
+      <div style="height:100%;display:flex;flex-direction:column">
+        <div style="background:linear-gradient(160deg,#146C43,#0B4D30);flex-shrink:0;padding:62px 20px 26px;display:flex;align-items:center;gap:14px">
+          <div style="width:56px;height:56px;border-radius:999px;background:rgba(255,255,255,0.16);display:flex;align-items:center;justify-content:center;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:19px;color:#fff">GC</div>
+          <div>
+            <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:17px;color:#fff">Giulia Colombo</div>
+            <div style="font-size:12.5px;color:rgba(255,255,255,0.7);margin-top:2px">{{ locationLabel }}</div>
+          </div>
+        </div>
+        <div style="flex:1;overflow:auto;background:#F6F8F4;border-radius:20px 20px 0 0;margin-top:-8px;padding:20px 20px 100px;display:flex;flex-direction:column;gap:18px">
+          <div style="display:flex;gap:10px">
+            <div style="flex:1;background:#fff;border:1px solid rgba(11,77,48,0.08);border-radius:16px;padding:14px">
+              <div style="font-size:11.5px;color:#6B7A72;font-weight:600">Risparmiati questo mese</div>
+              <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:20px;color:#146C43;margin-top:6px">€18,40</div>
+            </div>
+            <div style="flex:1;background:#fff;border:1px solid rgba(11,77,48,0.08);border-radius:16px;padding:14px">
+              <div style="font-size:11.5px;color:#6B7A72;font-weight:600">Confronti fatti</div>
+              <div style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:20px;color:#12241C;margin-top:6px">27</div>
+            </div>
+          </div>
+          <div style="background:#fff;border:1px solid rgba(11,77,48,0.08);border-radius:16px;overflow:hidden">
+            <sc-for list="{{ profileRows }}" as="row" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid #F0F3EF">
+                <div style="width:32px;height:32px;border-radius:9px;background:#EAF7EF;display:flex;align-items:center;justify-content:center;flex-shrink:0" dangerouslySetInnerHTML="{{ row.iconHtml }}"></div>
+                <div style="flex:1;font-size:14px;color:#12241C;font-weight:500">{{ row.label }}</div>
+                <svg width="8" height="14" viewBox="0 0 8 14"><path d="M1 1l6 6-6 6" stroke="#C7CFC9" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ============ BOTTOM TAB BAR ============ -->
+    <sc-if value="{{ showTabBar }}">
+      <div style="flex-shrink:0;background:#fff;border-top:1px solid rgba(11,77,48,0.08);padding:10px 12px 26px;display:flex;justify-content:space-around;position:relative;z-index:5">
+        <button onClick="{{ goHome }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;cursor:pointer">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M4 11l8-7 8 7v9a1 1 0 01-1 1h-4v-6h-6v6H5a1 1 0 01-1-1v-9z" stroke="{{ tabColors.home }}" stroke-width="2" stroke-linejoin="round"/></svg>
+          <span style="font-size:10.5px;font-weight:600;color:{{ tabColors.home }}">Home</span>
+        </button>
+        <button onClick="{{ goSearch }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;cursor:pointer">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="{{ tabColors.search }}" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="{{ tabColors.search }}" stroke-width="2" stroke-linecap="round"/></svg>
+          <span style="font-size:10.5px;font-weight:600;color:{{ tabColors.search }}">Cerca</span>
+        </button>
+        <button onClick="{{ goList }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;cursor:pointer;position:relative">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M6 6h15l-1.5 9h-12L6 6zm0 0L5 3H2" stroke="{{ tabColors.list }}" stroke-width="2" stroke-linejoin="round"/><circle cx="9" cy="20" r="1.4" fill="{{ tabColors.list }}"/><circle cx="17" cy="20" r="1.4" fill="{{ tabColors.list }}"/></svg>
+          <span style="font-size:10.5px;font-weight:600;color:{{ tabColors.list }}">Lista</span>
+          <sc-if value="{{ hasCartItems }}"><div style="position:absolute;top:-3px;right:2px;width:15px;height:15px;border-radius:999px;background:#FF7A45;color:#fff;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center">{{ cartCount }}</div></sc-if>
+        </button>
+        <button onClick="{{ goProfilo }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;cursor:pointer">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none"><path d="M12 3a5 5 0 00-5 5v3.4c0 .7-.3 1.4-.8 1.9L5 15h14l-1.2-1.7c-.5-.5-.8-1.2-.8-1.9V8a5 5 0 00-5-5z" stroke="{{ tabColors.profilo }}" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="17" r="6" stroke="{{ tabColors.profilo }}" stroke-width="1.7"/></svg>
+          <span style="font-size:10.5px;font-weight:600;color:{{ tabColors.profilo }}">Profilo</span>
+        </button>
+      </div>
+    </sc-if>
+  </div>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const STORES = [
+  { id: 'esselunga', name: 'Esselunga', initials: 'ES', color: '#0B7A3B', distanceKm: 1.2 },
+  { id: 'conad', name: 'Conad', initials: 'CN', color: '#A8123A', distanceKm: 0.8 },
+  { id: 'coop', name: 'Coop', initials: 'CP', color: '#E0592B', distanceKm: 2.1 },
+  { id: 'carrefour', name: 'Carrefour', initials: 'CF', color: '#0B5FA5', distanceKm: 1.6 },
+  { id: 'lidl', name: 'Lidl', initials: 'LI', color: '#D9A400', distanceKm: 3.0 },
+  { id: 'eurospin', name: 'Eurospin', initials: 'EU', color: '#7C3AED', distanceKm: 2.4 },
+];
+
+const CAT_COLORS = {
+  'Dispensa': { bg: '#FDF1E0', color: '#C77F1A' },
+  'Latticini e Uova': { bg: '#EAF3FF', color: '#2563AA' },
+  'Panetteria': { bg: '#FBEFE6', color: '#B25E2A' },
+  'Bevande': { bg: '#E7F5F0', color: '#0E8A6C' },
+  'Frutta e Verdura': { bg: '#EFF7E6', color: '#5A8F1F' },
+  'Carne e Pesce': { bg: '#FCEAEA', color: '#C23B3B' },
+  'Cura Casa': { bg: '#EFEAFB', color: '#6B4FBF' },
+};
+
+const PRODUCTS = [
+  { id: 'pasta', name: 'Pasta Barilla', unit: '500g', category: 'Dispensa', initials: 'PA', prices: { esselunga: 1.09, conad: 0.99, coop: 1.15, carrefour: 1.05, lidl: 0.89, eurospin: 0.85 } },
+  { id: 'latte', name: 'Latte Intero', unit: '1L', category: 'Latticini e Uova', initials: 'LA', prices: { esselunga: 1.35, conad: 1.29, coop: 1.42, carrefour: 1.25, lidl: 1.09, eurospin: 1.15 } },
+  { id: 'pane', name: 'Pane in Cassetta', unit: '400g', category: 'Panetteria', initials: 'PN', prices: { esselunga: 1.79, conad: 1.65, coop: 1.89, carrefour: 1.75, lidl: 1.39, eurospin: 1.49 } },
+  { id: 'uova', name: 'Uova Fresche', unit: '6 pz', category: 'Latticini e Uova', initials: 'UO', prices: { esselunga: 2.19, conad: 1.99, coop: 2.35, carrefour: 2.05, lidl: 1.79, eurospin: 1.85 } },
+  { id: 'olio', name: 'Olio Extra Vergine', unit: '1L', category: 'Dispensa', initials: 'OL', prices: { esselunga: 6.99, conad: 6.49, coop: 7.25, carrefour: 6.79, lidl: 5.99, eurospin: 6.15 } },
+  { id: 'caffe', name: 'Caffè Macinato', unit: '250g', category: 'Dispensa', initials: 'CA', prices: { esselunga: 3.49, conad: 3.19, coop: 3.65, carrefour: 3.29, lidl: 2.79, eurospin: 2.99 } },
+  { id: 'acqua', name: 'Acqua Naturale', unit: '6x1.5L', category: 'Bevande', initials: 'AC', prices: { esselunga: 2.49, conad: 2.29, coop: 2.65, carrefour: 2.39, lidl: 1.99, eurospin: 2.05 } },
+  { id: 'mele', name: 'Mele Golden', unit: '1kg', category: 'Frutta e Verdura', initials: 'ME', prices: { esselunga: 1.99, conad: 1.79, coop: 2.15, carrefour: 1.89, lidl: 1.59, eurospin: 1.69 } },
+  { id: 'pollo', name: 'Petto di Pollo', unit: '500g', category: 'Carne e Pesce', initials: 'PO', prices: { esselunga: 4.99, conad: 4.59, coop: 5.29, carrefour: 4.79, lidl: 4.19, eurospin: 4.39 } },
+  { id: 'detersivo', name: 'Detersivo Lavatrice', unit: '2L', category: 'Cura Casa', initials: 'DE', prices: { esselunga: 5.49, conad: 4.99, coop: 5.89, carrefour: 5.19, lidl: 4.49, eurospin: 4.69 } },
+];
+
+function eur(n) { return '€' + n.toFixed(2).replace('.', ','); }
+
+function storesSortedFor(product) {
+  return STORES.map(s => ({ store: s, price: product.prices[s.id] })).sort((a, b) => a.price - b.price);
+}
+
+function enrichProduct(product, handlers) {
+  const sorted = storesSortedFor(product);
+  const min = sorted[0], max = sorted[sorted.length - 1];
+  const savingsPct = Math.round(((max.price - min.price) / max.price) * 100);
+  const cat = CAT_COLORS[product.category];
+  return {
+    ...product,
+    tileBg: cat.bg, tileColor: cat.color,
+    minPriceLabel: eur(min.price),
+    minStoreName: min.store.name,
+    savingsLabel: eur(max.price - min.price),
+    savingsPctLabel: savingsPct + '%',
+    onOpen: () => handlers.openProduct(product.id),
+  };
+}
+
+class Component extends DCLogic {
+  state = {
+    screen: 'location',
+    locationLabel: null,
+    capInput: '',
+    searchQuery: '',
+    selectedProductId: null,
+    detailQty: 1,
+    cart: {},
+  };
+
+  goHome = () => this.setState({ screen: 'home' });
+  goSearch = () => this.setState({ screen: 'search' });
+  goList = () => this.setState({ screen: 'list' });
+  goProfilo = () => this.setState({ screen: 'profilo' });
+  goLocation = () => this.setState({ screen: 'location' });
+  goBack = () => this.setState({ screen: 'home' });
+
+  onUseGps = () => this.setState({ locationLabel: 'Milano, Zona Navigli', screen: 'home' });
+  onCapChange = (e) => this.setState({ capInput: e.target.value });
+  onConfirmLocation = () => {
+    const label = this.state.capInput.trim();
+    this.setState({ locationLabel: label || 'Milano, Zona Navigli', screen: 'home' });
+  };
+
+  onSearchChange = (e) => this.setState({ searchQuery: e.target.value });
+  selectCategory = (label) => this.setState({ searchQuery: label, screen: 'search' });
+
+  openProduct = (id) => this.setState({ selectedProductId: id, detailQty: 1, screen: 'detail' });
+  onQtyPlus = () => this.setState(s => ({ detailQty: s.detailQty + 1 }));
+  onQtyMinus = () => this.setState(s => ({ detailQty: Math.max(1, s.detailQty - 1) }));
+  onAddToList = () => {
+    const id = this.state.selectedProductId;
+    const qty = this.state.detailQty;
+    this.setState(s => ({ cart: { ...s.cart, [id]: (s.cart[id] || 0) + qty }, screen: 'list' }));
+  };
+
+  itemQtyPlus = (id) => this.setState(s => ({ cart: { ...s.cart, [id]: (s.cart[id] || 0) + 1 } }));
+  itemQtyMinus = (id) => this.setState(s => {
+    const q = Math.max(1, (s.cart[id] || 1) - 1);
+    return { cart: { ...s.cart, [id]: q } };
+  });
+  itemRemove = (id) => this.setState(s => {
+    const cart = { ...s.cart };
+    delete cart[id];
+    return { cart };
+  });
+
+  renderVals() {
+    const s = this.state;
+    const handlers = { openProduct: this.openProduct };
+    const locationLabel = s.locationLabel || 'Milano, Zona Navigli';
+
+    const categories = Object.keys(CAT_COLORS).map(label => ({
+      label, bg: CAT_COLORS[label].bg, color: CAT_COLORS[label].color, border: CAT_COLORS[label].bg,
+      onClick: () => this.selectCategory(label),
+    }));
+
+    const q = s.searchQuery.trim().toLowerCase();
+    const filteredProducts = PRODUCTS
+      .filter(p => !q || p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q))
+      .map(p => enrichProduct(p, handlers));
+
+    const homeDeals = [...PRODUCTS]
+      .map(p => enrichProduct(p, handlers))
+      .sort((a, b) => parseInt(b.savingsPctLabel) - parseInt(a.savingsPctLabel))
+      .slice(0, 4);
+
+    const cartEntries = Object.entries(s.cart).filter(([, qty]) => qty > 0);
+    const hasCartItems = cartEntries.length > 0;
+
+    const cartItems = cartEntries.map(([id, qty]) => {
+      const product = PRODUCTS.find(p => p.id === id);
+      const enriched = enrichProduct(product, handlers);
+      return {
+        ...enriched, qty,
+        unitPriceLabel: enriched.minPriceLabel + ' · ' + product.unit,
+        bestStoreName: enriched.minStoreName,
+        onPlus: () => this.itemQtyPlus(id),
+        onMinus: () => this.itemQtyMinus(id),
+        onRemove: () => this.itemRemove(id),
+      };
+    });
+
+    const storeTotalsRaw = STORES.map(store => {
+      const total = cartEntries.reduce((sum, [id, qty]) => {
+        const product = PRODUCTS.find(p => p.id === id);
+        return sum + product.prices[store.id] * qty;
+      }, 0);
+      return { store, total };
+    }).sort((a, b) => a.total - b.total);
+
+    const maxTotal = storeTotalsRaw.length ? storeTotalsRaw[storeTotalsRaw.length - 1].total : 0;
+    const minTotal = storeTotalsRaw.length ? storeTotalsRaw[0].total : 0;
+    const cartTotals = storeTotalsRaw.map((t, i) => ({
+      storeName: t.store.name,
+      totalLabel: eur(t.total),
+      barPct: maxTotal > 0 ? Math.max(6, Math.round((t.total / maxTotal) * 100)) : 6,
+      barColor: i === 0 ? '#1E9E5C' : 'rgba(255,255,255,0.35)',
+    }));
+
+    const cartBestStoreName = storeTotalsRaw.length ? storeTotalsRaw[0].store.name : '';
+    const cartBestTotalLabel = eur(minTotal);
+    const cartTotalSavingsLabel = eur(maxTotal - minTotal);
+    const cartCount = cartEntries.reduce((sum, [, qty]) => sum + qty, 0);
+
+    let selectedProduct = null, storeRows = [];
+    if (s.selectedProductId) {
+      const product = PRODUCTS.find(p => p.id === s.selectedProductId);
+      selectedProduct = enrichProduct(product, handlers);
+      const sorted = storesSortedFor(product);
+      const min = sorted[0].price;
+      storeRows = sorted.map((row, i) => ({
+        storeName: row.store.name,
+        storeInitials: row.store.initials,
+        storeColor: row.store.color,
+        distanceLabel: row.store.distanceKm.toFixed(1).replace('.', ',') + ' km',
+        isBest: i === 0,
+        priceLabel: eur(row.price),
+        priceColor: i === 0 ? '#1E9E5C' : '#12241C',
+        borderColor: i === 0 ? '#1E9E5C' : 'rgba(11,77,48,0.08)',
+        showDelta: i > 0,
+        deltaLabel: eur(row.price - min),
+      }));
+    }
+
+    const profileRows = [
+      { label: 'Notifiche offerte', iconHtml: { __html: '' } },
+      { label: 'Metodo di risparmio preferito', iconHtml: { __html: '' } },
+      { label: 'Supermercati preferiti', iconHtml: { __html: '' } },
+      { label: 'Informazioni', iconHtml: { __html: '' } },
+    ];
+
+    const isHome = s.screen === 'home';
+    const isSearch = s.screen === 'search';
+    const isList = s.screen === 'list';
+    const isProfilo = s.screen === 'profilo';
+    const isDetail = s.screen === 'detail';
+    const isLocation = s.screen === 'location';
+
+    const activeTab = isHome ? 'home' : isSearch ? 'search' : isList ? 'list' : isProfilo ? 'profilo' : '';
+    const tabColors = {
+      home: activeTab === 'home' ? '#146C43' : '#B7C0BA',
+      search: activeTab === 'search' ? '#146C43' : '#B7C0BA',
+      list: activeTab === 'list' ? '#146C43' : '#B7C0BA',
+      profilo: activeTab === 'profilo' ? '#146C43' : '#B7C0BA',
+    };
+
+    return {
+      isLocation, isHome, isSearch, isDetail, isList, isProfilo,
+      showTabBar: !isLocation && !isDetail,
+      locationLabel, capInput: s.capInput,
+      onUseGps: this.onUseGps, onCapChange: this.onCapChange, onConfirmLocation: this.onConfirmLocation,
+      goHome: this.goHome, goSearch: this.goSearch, goList: this.goList, goProfilo: this.goProfilo,
+      goLocation: this.goLocation, goBack: this.goBack,
+      searchQuery: s.searchQuery, onSearchChange: this.onSearchChange,
+      resultsCountLabel: filteredProducts.length + (filteredProducts.length === 1 ? ' risultato' : ' risultati'),
+      categories, filteredProducts, homeDeals,
+      hasCartItems, isCartEmpty: !hasCartItems,
+      cartItems, cartTotals, cartCount, cartBestStoreName, cartBestTotalLabel, cartTotalSavingsLabel,
+      selectedProduct, storeRows, detailQty: s.detailQty,
+      onQtyPlus: this.onQtyPlus, onQtyMinus: this.onQtyMinus, onAddToList: this.onAddToList,
+      addButtonLabel: 'Aggiungi alla lista · ' + (selectedProduct ? eur(selectedProduct.prices[storesSortedFor(selectedProduct)[0].store.id] * s.detailQty) : ''),
+      profileRows,
+      tabColors,
+    };
+  }
+}
+</script>
+</body>
+</html>
