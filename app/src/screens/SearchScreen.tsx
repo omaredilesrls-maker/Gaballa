@@ -67,7 +67,7 @@ export default function SearchScreen({
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingBottom: 100 }}>
             {filteredProducts.map(p => (
               <Pressable key={p.id} style={styles.row} onPress={() => openProduct(p.id)}>
-                <ProductAvatar size={48} bg={p.tileBg} color={p.tileColor} initials={p.initials} fontSize={13} />
+                <ProductAvatar size={48} bg={p.tileBg} color={p.tileColor} initials={p.initials} fontSize={13} fotoUrl={p.fotoUrl} />
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={styles.rowName}>{p.name}</Text>
                   <Text style={styles.rowMeta}>

@@ -27,6 +27,7 @@ interface ProdottoRow {
   quantita: number;
   unita_misura: string;
   iniziali: string;
+  foto_url?: string | null;
   categoria: { nome: string } | null;
 }
 
@@ -59,15 +60,23 @@ function unitLabel(quantita: number, unita: string): string {
 export async function fetchCatalog(): Promise<Catalog | null> {
   if (!supabase) return null;
 
-  const [catene, negozi, categorie, prodotti, prezzi] = await Promise.all([
+  const [catene, negozi, categorie, prodottiTentativo, prezzi] = await Promise.all([
     supabase.from('catena').select('id, nome, iniziali, colore'),
     supabase.from('negozio').select('id, catena_id, lat, lon').eq('attivo', true),
     supabase.from('categoria').select('nome, colore_sfondo, colore_testo'),
     supabase
       .from('prodotto')
-      .select('id, nome, quantita, unita_misura, iniziali, categoria:categoria_id (nome)'),
+      .select('id, nome, quantita, unita_misura, iniziali, foto_url, categoria:categoria_id (nome)'),
     supabase.from('prezzo_effettivo').select('negozio_id, prodotto_id, prezzo_finale'),
   ]);
+
+  // Compatibilità: su un database che non ha ancora la colonna foto_url
+  // (migrazione foto non applicata) la select fallisce; riproviamo senza.
+  const prodotti = prodottiTentativo.error
+    ? await supabase
+        .from('prodotto')
+        .select('id, nome, quantita, unita_misura, iniziali, categoria:categoria_id (nome)')
+    : prodottiTentativo;
 
   const failed = [catene, negozi, categorie, prodotti, prezzi].find(r => r.error);
   if (failed?.error) throw failed.error;
@@ -127,6 +136,7 @@ export async function fetchCatalog(): Promise<Catalog | null> {
         unit: unitLabel(p.quantita, p.unita_misura),
         category: p.categoria?.nome ?? '',
         initials: p.iniziali,
+        fotoUrl: p.foto_url,
         prices,
       },
     ];

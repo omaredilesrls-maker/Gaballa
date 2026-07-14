@@ -61,12 +61,28 @@
       </div>
       <label>Categoria</label>
       <select id="np-categoria"></select>
+      <label>Foto del prodotto (facoltativa)</label>
+      <input id="np-foto" type="file" accept="image/*">
     </div>
     <label>Prezzo in offerta (€)</label>
     <input id="prezzo" type="number" step="0.01" min="0.01" placeholder="es. 1,49">
+    <label>Foto della pagina del volantino (facoltativa)</label>
+    <input id="volantino-foto" type="file" accept="image/*" capture="environment">
     <button class="primary" id="salva">Salva offerta</button>
     <div class="msg" id="offer-msg"></div>
     <p class="hint">Il prezzo viene applicato a tutti i punti vendita della catena nella zona di Milano (fonte: volantino). Aggiorna i prezzi a ogni nuovo volantino: l'app mostra sempre l'ultima rilevazione.<br><br>⚠️ Un prodotto compare nell'app solo quando ha un prezzo in <b>tutte</b> le catene: dopo averlo creato, inserisci il suo prezzo per ognuna delle 6 catene.</p>
+  </div>
+
+  <!-- FOTO PRODOTTO ESISTENTE -->
+  <div class="card hidden" id="foto-card">
+    <h2>Foto di un prodotto esistente</h2>
+    <label>Prodotto</label>
+    <select id="foto-prodotto"></select>
+    <label>Foto</label>
+    <input id="foto-file" type="file" accept="image/*">
+    <button class="primary" id="salva-foto">Carica foto</button>
+    <div class="msg" id="foto-msg"></div>
+    <p class="hint">La foto compare subito nell'app (home, ricerca, dettaglio, lista) al posto delle iniziali. Meglio immagini quadrate su sfondo chiaro.</p>
   </div>
 
   <!-- ULTIMI INSERIMENTI -->
@@ -91,9 +107,19 @@ async function refreshUi() {
   const logged = !!session;
   show('login-card', !logged);
   show('offer-card', logged);
+  show('foto-card', logged);
   show('recenti-card', logged);
   show('logout', logged);
   if (logged) await loadData();
+}
+
+// Carica un'immagine nel bucket pubblico e ritorna l'URL da salvare.
+async function uploadImage(file, cartella) {
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+  const path = cartella + '/' + crypto.randomUUID() + '.' + ext;
+  const { error } = await db.storage.from('immagini').upload(path, file, { cacheControl: '31536000' });
+  if (error) throw error;
+  return db.storage.from('immagini').getPublicUrl(path).data.publicUrl;
 }
 
 async function loadData() {
@@ -103,9 +129,9 @@ async function loadData() {
     db.from('categoria').select('id, nome').order('nome').then(r => r.data ?? []),
   ]);
   $('catena').innerHTML = catene.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
-  $('prodotto').innerHTML =
-    prodotti.map(p => `<option value="${p.id}">${p.nome}${p.marca ? ' — ' + p.marca : ''} (${Number(p.quantita)}${p.unita_misura})</option>`).join('') +
-    '<option value="__nuovo__">➕ Nuovo prodotto…</option>';
+  const opzioniProdotti = prodotti.map(p => `<option value="${p.id}">${p.nome}${p.marca ? ' — ' + p.marca : ''} (${Number(p.quantita)}${p.unita_misura})</option>`).join('');
+  $('prodotto').innerHTML = opzioniProdotti + '<option value="__nuovo__">➕ Nuovo prodotto…</option>';
+  $('foto-prodotto').innerHTML = opzioniProdotti;
   $('np-categoria').innerHTML = categorie.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
   await loadRecenti();
 }
@@ -113,12 +139,16 @@ async function loadData() {
 async function loadRecenti() {
   const { data } = await db
     .from('prezzo')
-    .select('prezzo, rilevato_il, prodotto:prodotto_id(nome), negozio:negozio_id(nome)')
+    .select('prezzo, rilevato_il, riferimento_fonte, prodotto:prodotto_id(nome), negozio:negozio_id(nome)')
     .eq('fonte', 'volantino')
     .order('rilevato_il', { ascending: false })
     .limit(8);
   $('recenti').innerHTML = (data ?? [])
-    .map(r => `<li>€${Number(r.prezzo).toFixed(2)} — ${r.prodotto?.nome ?? '?'} @ ${r.negozio?.nome ?? '?'} <small>(${new Date(r.rilevato_il).toLocaleString('it-IT')})</small></li>`)
+    .map(r => {
+      const volantino = r.riferimento_fonte?.startsWith('http')
+        ? ` <a href="${r.riferimento_fonte}" target="_blank" rel="noopener">📄 volantino</a>` : '';
+      return `<li>€${Number(r.prezzo).toFixed(2)} — ${r.prodotto?.nome ?? '?'} @ ${r.negozio?.nome ?? '?'}${volantino} <small>(${new Date(r.rilevato_il).toLocaleString('it-IT')})</small></li>`;
+    })
     .join('') || '<li>Nessun inserimento ancora.</li>';
 }
 
@@ -149,6 +179,8 @@ $('salva').addEventListener('click', async () => {
       const quantita = parseFloat(String($('np-quantita').value).replace(',', '.'));
       if (!nome || !quantita) throw new Error('Compila nome e quantità del nuovo prodotto.');
       const iniziali = nome.split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase().padEnd(2, nome[1]?.toUpperCase() ?? 'X');
+      const fotoFile = $('np-foto').files[0];
+      const fotoUrl = fotoFile ? await uploadImage(fotoFile, 'prodotti') : null;
       const { data, error } = await db.from('prodotto').insert({
         nome,
         marca: $('np-marca').value.trim() || null,
@@ -156,10 +188,16 @@ $('salva').addEventListener('click', async () => {
         unita_misura: $('np-unita').value,
         categoria_id: $('np-categoria').value,
         iniziali: iniziali.slice(0, 2),
+        foto_url: fotoUrl,
       }).select('id').single();
       if (error) throw error;
       prodottoId = data.id;
     }
+
+    // Foto della pagina del volantino: caricata una volta, referenziata
+    // da tutte le righe prezzo di questo salvataggio.
+    const volantinoFile = $('volantino-foto').files[0];
+    const volantinoUrl = volantinoFile ? await uploadImage(volantinoFile, 'volantini') : null;
 
     // Tutti i punti vendita della catena nella zona Milano
     const { data: zone } = await db.from('zona').select('id').eq('nome', 'Milano').single();
@@ -177,7 +215,7 @@ $('salva').addEventListener('click', async () => {
       prodotto_id: prodottoId,
       prezzo,
       fonte: 'volantino',
-      riferimento_fonte: 'pannello-admin',
+      riferimento_fonte: volantinoUrl ?? 'pannello-admin',
     }));
     const { error: errPrezzi } = await db.from('prezzo').insert(rows);
     if (errPrezzi) throw errPrezzi;
@@ -185,12 +223,36 @@ $('salva').addEventListener('click', async () => {
     msg.className = 'msg ok';
     msg.textContent = `Salvato: €${prezzo.toFixed(2)} su ${rows.length} punti vendita.`;
     $('prezzo').value = '';
+    $('volantino-foto').value = '';
+    $('np-foto').value = '';
     await loadData();
   } catch (e) {
     msg.className = 'msg err';
     msg.textContent = 'Errore: ' + (e.message ?? e);
   } finally {
     $('salva').disabled = false;
+  }
+});
+
+$('salva-foto').addEventListener('click', async () => {
+  const msg = $('foto-msg');
+  msg.className = 'msg';
+  msg.textContent = '';
+  const file = $('foto-file').files[0];
+  if (!file) { msg.className = 'msg err'; msg.textContent = 'Scegli un file immagine.'; return; }
+  $('salva-foto').disabled = true;
+  try {
+    const url = await uploadImage(file, 'prodotti');
+    const { error } = await db.from('prodotto').update({ foto_url: url }).eq('id', $('foto-prodotto').value);
+    if (error) throw error;
+    msg.className = 'msg ok';
+    msg.textContent = 'Foto caricata: comparirà subito nell\'app.';
+    $('foto-file').value = '';
+  } catch (e) {
+    msg.className = 'msg err';
+    msg.textContent = 'Errore: ' + (e.message ?? e);
+  } finally {
+    $('salva-foto').disabled = false;
   }
 });
 

@@ -12,6 +12,7 @@ interface CartItem {
   tileBg: string;
   tileColor: string;
   initials: string;
+  fotoUrl?: string | null;
   bestStoreName: string;
   unitPriceLabel: string;
   qty: number;
@@ -87,7 +88,7 @@ export default function ListScreen({
               <View style={{ gap: 10 }}>
                 {cartItems.map(it => (
                   <View key={it.id} style={styles.itemRow}>
-                    <ProductAvatar size={46} bg={it.tileBg} color={it.tileColor} initials={it.initials} fontSize={12.5} radius={11} />
+                    <ProductAvatar size={46} bg={it.tileBg} color={it.tileColor} initials={it.initials} fontSize={12.5} radius={11} fotoUrl={it.fotoUrl} />
                     <View style={{ flex: 1, minWidth: 0 }}>
                       <Text style={styles.itemName}>{it.name}</Text>
                       <Text style={styles.itemMeta}>
