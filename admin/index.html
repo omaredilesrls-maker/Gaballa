@@ -73,6 +73,25 @@
     <p class="hint">Il prezzo viene applicato a tutti i punti vendita della catena nella zona di Milano (fonte: volantino). Aggiorna i prezzi a ogni nuovo volantino: l'app mostra sempre l'ultima rilevazione.<br><br>⚠️ Un prodotto compare nell'app solo quando ha un prezzo in <b>tutte</b> le catene: dopo averlo creato, inserisci il suo prezzo per ognuna delle 6 catene.</p>
   </div>
 
+  <!-- ESTRAZIONE DA PDF -->
+  <div class="card hidden" id="pdf-card">
+    <h2>📄 Estrai offerte da un volantino PDF</h2>
+    <label>Catena del volantino</label>
+    <select id="pdf-catena"></select>
+    <label>File PDF</label>
+    <input id="pdf-file" type="file" accept="application/pdf">
+    <button class="primary" id="pdf-analizza">Analizza con l'AI</button>
+    <div class="msg" id="pdf-msg"></div>
+    <div id="pdf-risultati" class="hidden">
+      <div style="overflow-x:auto; margin-top:12px;">
+        <table id="pdf-tabella" style="width:100%; border-collapse:collapse; font-size:13px;"></table>
+      </div>
+      <button class="primary" id="pdf-importa">Importa le offerte selezionate</button>
+      <div class="msg" id="pdf-importa-msg"></div>
+    </div>
+    <p class="hint">L'AI legge il PDF ed estrae prodotti e prezzi; tu controlli la tabella, correggi ed escludi quello che non va, poi importi. L'analisi richiede 1–3 minuti e costa pochi centesimi di credito AI per volantino. Per volantini molto lunghi, carica poche pagine per volta.<br><br>⚠️ Come sempre: un prodotto compare nell'app solo quando ha un prezzo in <b>tutte</b> le catene — importa i volantini di tutte e 6 per un confronto completo.</p>
+  </div>
+
   <!-- FOTO PRODOTTO ESISTENTE -->
   <div class="card hidden" id="foto-card">
     <h2>Foto di un prodotto esistente</h2>
@@ -107,6 +126,7 @@ async function refreshUi() {
   const logged = !!session;
   show('login-card', !logged);
   show('offer-card', logged);
+  show('pdf-card', logged);
   show('foto-card', logged);
   show('recenti-card', logged);
   show('logout', logged);
@@ -128,7 +148,9 @@ async function loadData() {
     db.from('prodotto').select('id, nome, marca, quantita, unita_misura').order('nome').then(r => r.data ?? []),
     db.from('categoria').select('id, nome').order('nome').then(r => r.data ?? []),
   ]);
-  $('catena').innerHTML = catene.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+  const opzioniCatene = catene.map(c => `<option value="${c.id}">${c.nome}</option>`).join('');
+  $('catena').innerHTML = opzioniCatene;
+  $('pdf-catena').innerHTML = opzioniCatene;
   const opzioniProdotti = prodotti.map(p => `<option value="${p.id}">${p.nome}${p.marca ? ' — ' + p.marca : ''} (${Number(p.quantita)}${p.unita_misura})</option>`).join('');
   $('prodotto').innerHTML = opzioniProdotti + '<option value="__nuovo__">➕ Nuovo prodotto…</option>';
   $('foto-prodotto').innerHTML = opzioniProdotti;
@@ -231,6 +253,127 @@ $('salva').addEventListener('click', async () => {
     msg.textContent = 'Errore: ' + (e.message ?? e);
   } finally {
     $('salva').disabled = false;
+  }
+});
+
+// ---- Estrazione offerte da volantino PDF ----
+let offerteEstratte = [];
+let pdfUrlCorrente = null;
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+function renderTabellaOfferte() {
+  const unita = ['g', 'kg', 'ml', 'l', 'pz'];
+  const testata = '<tr><th></th><th>Prodotto</th><th>Marca</th><th>Qtà</th><th>Unità</th><th>€</th><th>Categoria</th></tr>';
+  $('pdf-tabella').innerHTML = testata + offerteEstratte.map((o, i) => `
+    <tr data-i="${i}" style="border-top:1px solid var(--border);">
+      <td><input type="checkbox" class="sel" checked style="width:auto;height:auto;"></td>
+      <td><input class="f-nome" value="${esc(o.nome)}" style="min-width:140px;"></td>
+      <td><input class="f-marca" value="${esc(o.marca)}" style="min-width:80px;"></td>
+      <td><input class="f-quantita" type="number" step="any" value="${esc(o.quantita)}" style="width:70px;"></td>
+      <td><select class="f-unita" style="width:64px;">${unita.map(u => `<option${u === o.unita ? ' selected' : ''}>${u}</option>`).join('')}</select></td>
+      <td><input class="f-prezzo" type="number" step="0.01" value="${esc(o.prezzo)}" style="width:76px;"></td>
+      <td><select class="f-categoria" style="min-width:120px;">${categorie.map(c => `<option${c.nome === o.categoria ? ' selected' : ''}>${esc(c.nome)}</option>`).join('')}</select></td>
+    </tr>`).join('');
+}
+
+$('pdf-analizza').addEventListener('click', async () => {
+  const msg = $('pdf-msg');
+  msg.className = 'msg';
+  msg.textContent = '';
+  const file = $('pdf-file').files[0];
+  if (!file) { msg.className = 'msg err'; msg.textContent = 'Scegli un file PDF.'; return; }
+  $('pdf-analizza').disabled = true;
+  show('pdf-risultati', false);
+  try {
+    msg.textContent = 'Carico il PDF…';
+    const path = 'volantini-pdf/' + crypto.randomUUID() + '.pdf';
+    const { error: errUp } = await db.storage.from('immagini').upload(path, file, { contentType: 'application/pdf' });
+    if (errUp) throw errUp;
+    pdfUrlCorrente = db.storage.from('immagini').getPublicUrl(path).data.publicUrl;
+
+    msg.textContent = "Analisi con l'AI in corso… (1–3 minuti, non chiudere la pagina)";
+    const { data, error } = await db.functions.invoke('estrai-volantino', { body: { path } });
+    if (error) throw new Error(error.message || 'Funzione non raggiungibile: è stata pubblicata?');
+    if (data?.error) throw new Error(data.error);
+    offerteEstratte = data?.offerte ?? [];
+    if (!offerteEstratte.length) throw new Error('Nessuna offerta con prezzo trovata nel PDF.');
+    renderTabellaOfferte();
+    show('pdf-risultati', true);
+    msg.className = 'msg ok';
+    msg.textContent = `Trovate ${offerteEstratte.length} offerte: controlla la tabella, correggi ed importa.`;
+  } catch (e) {
+    msg.className = 'msg err';
+    msg.textContent = 'Errore: ' + (e.message ?? e);
+  } finally {
+    $('pdf-analizza').disabled = false;
+  }
+});
+
+$('pdf-importa').addEventListener('click', async () => {
+  const msg = $('pdf-importa-msg');
+  msg.className = 'msg';
+  msg.textContent = '';
+  const righe = [...document.querySelectorAll('#pdf-tabella tr[data-i]')].filter(r => r.querySelector('.sel').checked);
+  if (!righe.length) { msg.className = 'msg err'; msg.textContent = 'Nessuna offerta selezionata.'; return; }
+  $('pdf-importa').disabled = true;
+  try {
+    const { data: zona } = await db.from('zona').select('id').eq('nome', 'Milano').single();
+    const { data: negozi, error: errNegozi } = await db
+      .from('negozio').select('id')
+      .eq('catena_id', $('pdf-catena').value)
+      .eq('zona_id', zona.id)
+      .eq('attivo', true);
+    if (errNegozi) throw errNegozi;
+    if (!negozi?.length) throw new Error('Nessun negozio di questa catena nella zona Milano.');
+
+    let nuoviProdotti = 0;
+    const righePrezzo = [];
+    for (const r of righe) {
+      const nome = r.querySelector('.f-nome').value.trim();
+      const marca = r.querySelector('.f-marca').value.trim();
+      const quantita = parseFloat(String(r.querySelector('.f-quantita').value).replace(',', '.'));
+      const unita = r.querySelector('.f-unita').value;
+      const prezzo = parseFloat(String(r.querySelector('.f-prezzo').value).replace(',', '.'));
+      const categoria = r.querySelector('.f-categoria').value;
+      if (!nome || !(prezzo > 0) || !(quantita > 0)) continue;
+
+      let prodottoId = prodotti.find(p => p.nome.trim().toLowerCase() === nome.toLowerCase())?.id;
+      if (!prodottoId) {
+        const cat = categorie.find(c => c.nome === categoria) ?? categorie[0];
+        const iniziali = nome.split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase().padEnd(2, 'X').slice(0, 2);
+        const { data, error } = await db.from('prodotto').insert({
+          nome, marca: marca || null, quantita, unita_misura: unita, categoria_id: cat.id, iniziali,
+        }).select('id').single();
+        if (error) throw error;
+        prodottoId = data.id;
+        nuoviProdotti++;
+        prodotti.push({ id: prodottoId, nome, marca, quantita, unita_misura: unita });
+      }
+      for (const n of negozi) {
+        righePrezzo.push({
+          negozio_id: n.id,
+          prodotto_id: prodottoId,
+          prezzo,
+          fonte: 'volantino',
+          riferimento_fonte: pdfUrlCorrente ?? 'pdf-import',
+        });
+      }
+    }
+    if (!righePrezzo.length) throw new Error('Nessuna riga valida da importare.');
+    const { error: errPrezzi } = await db.from('prezzo').insert(righePrezzo);
+    if (errPrezzi) throw errPrezzi;
+
+    msg.className = 'msg ok';
+    msg.textContent = `Importate ${righe.length} offerte (${nuoviProdotti} prodotti nuovi) su ${negozi.length} punti vendita.`;
+    show('pdf-risultati', false);
+    $('pdf-file').value = '';
+    await loadData();
+  } catch (e) {
+    msg.className = 'msg err';
+    msg.textContent = 'Errore: ' + (e.message ?? e);
+  } finally {
+    $('pdf-importa').disabled = false;
   }
 });
 
