@@ -1,9 +1,5 @@
-import { Catalog, Product, Store } from '../data';
+import { Catalog, DEFAULT_POSITION, Product, Store, haversineKm } from '../data';
 import { supabase } from './supabase';
-
-// Posizione di ripiego per calcolare la distanza dei negozi finché l'app non
-// legge il GPS vero: Milano, zona Navigli (la stessa della modalità demo).
-const DEFAULT_POS = { lat: 45.4519, lon: 9.174 };
 
 interface CatenaRow {
   id: string;
@@ -38,16 +34,6 @@ interface PrezzoRow {
   negozio_id: string;
   prodotto_id: string;
   prezzo_finale: number;
-}
-
-function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const toRad = (deg: number) => (deg * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 // '500g', '1L', '6 pz' — stesso formato delle etichette demo di data.ts.
@@ -114,15 +100,18 @@ export async function fetchCatalog(): Promise<Catalog | null> {
   if (!catenePrezzate.length) return null;
 
   const stores: Store[] = catenePrezzate.map(c => {
-    const distances = negozioRows
+    const coords = negozioRows
       .filter(n => n.catena_id === c.id)
-      .map(n => haversineKm(DEFAULT_POS.lat, DEFAULT_POS.lon, n.lat, n.lon));
+      .map(n => ({ lat: n.lat, lon: n.lon }));
     return {
       id: c.id,
       name: c.nome,
       initials: c.iniziali,
       color: c.colore,
-      distanceKm: distances.length ? Math.min(...distances) : 0,
+      distanceKm: coords.length
+        ? Math.min(...coords.map(p => haversineKm(DEFAULT_POSITION, p)))
+        : 0,
+      coords,
     };
   });
 

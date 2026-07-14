@@ -34,6 +34,12 @@
           "backgroundColor": "#0B4D30",
           "imageWidth": 180
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "MigliorSpesa usa la tua posizione per calcolare la distanza dei supermercati e mostrarti i prezzi vicino a te."
+        }
       ]
     ],
     "extra": {

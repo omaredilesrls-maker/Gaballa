@@ -52,6 +52,8 @@ export default function App() {
             setCapInput={state.setCapInput}
             onUseGps={state.onUseGps}
             onConfirmLocation={state.onConfirmLocation}
+            locating={state.locating}
+            locationError={state.locationError}
           />
         )}
         {state.isHome && (
