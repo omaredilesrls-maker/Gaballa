@@ -65,6 +65,7 @@ export default function DetailScreen({
               initials={selectedProduct.initials}
               fontSize={19}
               radius={18}
+              fotoUrl={selectedProduct.fotoUrl}
             />
             <View>
               <Text style={styles.productName}>{selectedProduct.name}</Text>

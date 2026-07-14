@@ -44,6 +44,7 @@ export interface Product {
   unit: string;
   category: string;
   initials: string;
+  fotoUrl?: string | null;
   prices: Record<StoreId, number>;
 }
 

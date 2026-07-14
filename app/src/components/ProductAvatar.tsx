@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import { fonts } from '../theme';
 
 interface Props {
@@ -9,9 +9,21 @@ interface Props {
   initials: string;
   fontSize?: number;
   radius?: number;
+  // Foto del prodotto (da Supabase Storage): se presente sostituisce le iniziali.
+  fotoUrl?: string | null;
 }
 
-export default function ProductAvatar({ size, bg, color, initials, fontSize = 14, radius }: Props) {
+export default function ProductAvatar({ size, bg, color, initials, fontSize = 14, radius, fotoUrl }: Props) {
+  const borderRadius = radius ?? size * 0.23;
+  if (fotoUrl) {
+    return (
+      <Image
+        source={{ uri: fotoUrl }}
+        style={[styles.tile, { width: size, height: size, borderRadius, backgroundColor: bg }]}
+        resizeMode="cover"
+      />
+    );
+  }
   return (
     <View
       style={[
@@ -19,7 +31,7 @@ export default function ProductAvatar({ size, bg, color, initials, fontSize = 14
         {
           width: size,
           height: size,
-          borderRadius: radius ?? size * 0.23,
+          borderRadius,
           backgroundColor: bg,
         },
       ]}

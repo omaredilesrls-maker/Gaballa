@@ -80,7 +80,7 @@ export default function HomeScreen({
             <View style={{ gap: 10 }}>
               {homeDeals.map(p => (
                 <Pressable key={p.id} style={styles.dealRow} onPress={() => openProduct(p.id)}>
-                  <ProductAvatar size={52} bg={p.tileBg} color={p.tileColor} initials={p.initials} fontSize={14} />
+                  <ProductAvatar size={52} bg={p.tileBg} color={p.tileColor} initials={p.initials} fontSize={14} fotoUrl={p.fotoUrl} />
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text style={styles.dealName} numberOfLines={1}>
                       {p.name}
