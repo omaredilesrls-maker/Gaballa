@@ -1,0 +1,241 @@
+import { useMemo, useState } from 'react';
+import { PRODUCTS, StoreId, STORES, enrichProduct, eur, storesSortedFor } from '../data';
+import { catColors, colors } from '../theme';
+
+export type Screen = 'location' | 'home' | 'search' | 'detail' | 'list' | 'profilo';
+
+const DEFAULT_LOCATION = 'Milano, Zona Navigli';
+
+export function useAppState() {
+  const [screen, setScreen] = useState<Screen>('location');
+  const [locationLabel, setLocationLabel] = useState<string | null>(null);
+  const [capInput, setCapInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [detailQty, setDetailQty] = useState(1);
+  const [cart, setCart] = useState<Record<string, number>>({});
+
+  const goHome = () => setScreen('home');
+  const goSearch = () => setScreen('search');
+  const goList = () => setScreen('list');
+  const goProfilo = () => setScreen('profilo');
+  const goLocation = () => setScreen('location');
+  const goBack = () => setScreen('home');
+
+  const onUseGps = () => {
+    setLocationLabel(DEFAULT_LOCATION);
+    setScreen('home');
+  };
+  const onConfirmLocation = () => {
+    const label = capInput.trim();
+    setLocationLabel(label || DEFAULT_LOCATION);
+    setScreen('home');
+  };
+
+  const selectCategory = (label: string) => {
+    setSearchQuery(label);
+    setScreen('search');
+  };
+
+  const openProduct = (id: string) => {
+    setSelectedProductId(id);
+    setDetailQty(1);
+    setScreen('detail');
+  };
+  const onQtyPlus = () => setDetailQty(q => q + 1);
+  const onQtyMinus = () => setDetailQty(q => Math.max(1, q - 1));
+  const onAddToList = () => {
+    if (!selectedProductId) return;
+    const id = selectedProductId;
+    const qty = detailQty;
+    setCart(c => ({ ...c, [id]: (c[id] || 0) + qty }));
+    setScreen('list');
+  };
+
+  const itemQtyPlus = (id: string) => setCart(c => ({ ...c, [id]: (c[id] || 0) + 1 }));
+  const itemQtyMinus = (id: string) =>
+    setCart(c => ({ ...c, [id]: Math.max(1, (c[id] || 1) - 1) }));
+  const itemRemove = (id: string) =>
+    setCart(c => {
+      const next = { ...c };
+      delete next[id];
+      return next;
+    });
+
+  const derived = useMemo(() => {
+    const resolvedLocationLabel = locationLabel || DEFAULT_LOCATION;
+
+    const categories = Object.keys(catColors).map(label => ({
+      label,
+      bg: catColors[label].bg,
+      color: catColors[label].color,
+      border: catColors[label].bg,
+    }));
+
+    const q = searchQuery.trim().toLowerCase();
+    const filteredProducts = PRODUCTS.filter(
+      p => !q || p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)
+    ).map(enrichProduct);
+
+    const homeDeals = PRODUCTS.map(enrichProduct)
+      .sort((a, b) => b.savingsPct - a.savingsPct)
+      .slice(0, 4);
+
+    const cartEntries = Object.entries(cart).filter(([, qty]) => qty > 0);
+    const hasCartItems = cartEntries.length > 0;
+
+    const cartItems = cartEntries.map(([id, qty]) => {
+      const product = PRODUCTS.find(p => p.id === id)!;
+      const enriched = enrichProduct(product);
+      return {
+        ...enriched,
+        qty,
+        unitPriceLabel: enriched.minPriceLabel + ' · ' + product.unit,
+        bestStoreName: enriched.minStoreName,
+      };
+    });
+
+    const storeTotalsRaw = STORES.map(store => {
+      const total = cartEntries.reduce((sum, [id, qty]) => {
+        const product = PRODUCTS.find(p => p.id === id)!;
+        return sum + product.prices[store.id] * qty;
+      }, 0);
+      return { store, total };
+    }).sort((a, b) => a.total - b.total);
+
+    const maxTotal = storeTotalsRaw.length ? storeTotalsRaw[storeTotalsRaw.length - 1].total : 0;
+    const minTotal = storeTotalsRaw.length ? storeTotalsRaw[0].total : 0;
+    const cartTotals = storeTotalsRaw.map((t, i) => ({
+      storeName: t.store.name,
+      totalLabel: eur(t.total),
+      barPct: maxTotal > 0 ? Math.max(6, Math.round((t.total / maxTotal) * 100)) : 6,
+      barColor: i === 0 ? colors.green500 : 'rgba(255,255,255,0.35)',
+    }));
+
+    const cartBestStoreName = storeTotalsRaw.length ? storeTotalsRaw[0].store.name : '';
+    const cartBestTotalLabel = eur(minTotal);
+    const cartTotalSavingsLabel = eur(maxTotal - minTotal);
+    const cartCount = cartEntries.reduce((sum, [, qty]) => sum + qty, 0);
+
+    let selectedProduct = null as ReturnType<typeof enrichProduct> | null;
+    let storeRows: {
+      storeName: string;
+      storeInitials: string;
+      storeColor: string;
+      distanceLabel: string;
+      isBest: boolean;
+      priceLabel: string;
+      priceColor: string;
+      borderColor: string;
+      showDelta: boolean;
+      deltaLabel: string;
+    }[] = [];
+
+    if (selectedProductId) {
+      const product = PRODUCTS.find(p => p.id === selectedProductId)!;
+      selectedProduct = enrichProduct(product);
+      const sorted = storesSortedFor(product);
+      const min = sorted[0].price;
+      storeRows = sorted.map((row, i) => ({
+        storeName: row.store.name,
+        storeInitials: row.store.initials,
+        storeColor: row.store.color,
+        distanceLabel: row.store.distanceKm.toFixed(1).replace('.', ',') + ' km',
+        isBest: i === 0,
+        priceLabel: eur(row.price),
+        priceColor: i === 0 ? colors.green500 : colors.text,
+        borderColor: i === 0 ? colors.green500 : colors.border,
+        showDelta: i > 0,
+        deltaLabel: eur(row.price - min),
+      }));
+    }
+
+    const addButtonLabel =
+      'Aggiungi alla lista · ' +
+      (selectedProduct
+        ? eur(
+            selectedProduct.prices[storesSortedFor(selectedProduct)[0].store.id as StoreId] *
+              detailQty
+          )
+        : '');
+
+    const profileRows = [
+      { label: 'Notifiche offerte' },
+      { label: 'Metodo di risparmio preferito' },
+      { label: 'Supermercati preferiti' },
+      { label: 'Informazioni' },
+    ];
+
+    const isHome = screen === 'home';
+    const isSearch = screen === 'search';
+    const isList = screen === 'list';
+    const isProfilo = screen === 'profilo';
+    const isDetail = screen === 'detail';
+    const isLocation = screen === 'location';
+
+    const activeTab = isHome ? 'home' : isSearch ? 'search' : isList ? 'list' : isProfilo ? 'profilo' : '';
+    const tabColors = {
+      home: activeTab === 'home' ? colors.green700 : colors.tabInactive,
+      search: activeTab === 'search' ? colors.green700 : colors.tabInactive,
+      list: activeTab === 'list' ? colors.green700 : colors.tabInactive,
+      profilo: activeTab === 'profilo' ? colors.green700 : colors.tabInactive,
+    };
+
+    return {
+      isLocation,
+      isHome,
+      isSearch,
+      isDetail,
+      isList,
+      isProfilo,
+      showTabBar: !isLocation && !isDetail,
+      locationLabel: resolvedLocationLabel,
+      resultsCountLabel:
+        filteredProducts.length + (filteredProducts.length === 1 ? ' risultato' : ' risultati'),
+      categories,
+      filteredProducts,
+      homeDeals,
+      hasCartItems,
+      isCartEmpty: !hasCartItems,
+      cartItems,
+      cartTotals,
+      cartCount,
+      cartBestStoreName,
+      cartBestTotalLabel,
+      cartTotalSavingsLabel,
+      selectedProduct,
+      storeRows,
+      addButtonLabel,
+      profileRows,
+      tabColors,
+    };
+  }, [screen, locationLabel, searchQuery, selectedProductId, detailQty, cart]);
+
+  return {
+    screen,
+    capInput,
+    searchQuery,
+    detailQty,
+    setCapInput,
+    setSearchQuery,
+    goHome,
+    goSearch,
+    goList,
+    goProfilo,
+    goLocation,
+    goBack,
+    onUseGps,
+    onConfirmLocation,
+    selectCategory,
+    openProduct,
+    onQtyPlus,
+    onQtyMinus,
+    onAddToList,
+    itemQtyPlus,
+    itemQtyMinus,
+    itemRemove,
+    ...derived,
+  };
+}
+
+export type AppState = ReturnType<typeof useAppState>;

@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "MigliorSpesa",
+    "slug": "migliorspesa",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.migliorspesa.app"
+    },
+    "android": {
+      "package": "com.migliorspesa.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#0B4D30",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "backgroundColor": "#0B4D30",
+          "imageWidth": 180
+        }
+      ]
+    ]
+  }
+}
