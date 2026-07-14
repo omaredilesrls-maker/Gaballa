@@ -35,6 +35,12 @@
           "imageWidth": 180
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "d29cd0f8-d82e-4192-9fe8-9c3fc8f69d8d"
+      }
+    },
+    "owner": "gaballa"
   }
 }
