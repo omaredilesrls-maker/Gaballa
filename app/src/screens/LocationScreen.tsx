@@ -10,9 +10,18 @@ interface Props {
   setCapInput: (v: string) => void;
   onUseGps: () => void;
   onConfirmLocation: () => void;
+  locating: boolean;
+  locationError: string | null;
 }
 
-export default function LocationScreen({ capInput, setCapInput, onUseGps, onConfirmLocation }: Props) {
+export default function LocationScreen({
+  capInput,
+  setCapInput,
+  onUseGps,
+  onConfirmLocation,
+  locating,
+  locationError,
+}: Props) {
   const insets = useSafeAreaInsets();
   return (
     <LinearGradient colors={gradient.header} start={{ x: 0.2, y: 0 }} end={{ x: 0.75, y: 1 }} style={styles.container}>
@@ -30,9 +39,15 @@ export default function LocationScreen({ capInput, setCapInput, onUseGps, onConf
       </View>
       <View style={[styles.sheet, { paddingBottom: insets.bottom + 24 }]}>
         <Text style={styles.sheetTitle}>Dove fai la spesa?</Text>
-        <Pressable style={styles.gpsButton} onPress={onUseGps}>
+        <Pressable
+          style={[styles.gpsButton, locating && styles.buttonDisabled]}
+          onPress={onUseGps}
+          disabled={locating}
+        >
           <PinIcon size={18} color="#fff" strokeWidth={2} filledDot />
-          <Text style={styles.gpsButtonText}>Usa la mia posizione</Text>
+          <Text style={styles.gpsButtonText}>
+            {locating ? 'Ricerca in corso…' : 'Usa la mia posizione'}
+          </Text>
         </Pressable>
         <View style={styles.dividerRow}>
           <View style={styles.dividerLine} />
@@ -46,9 +61,14 @@ export default function LocationScreen({ capInput, setCapInput, onUseGps, onConf
           placeholderTextColor={colors.textFaint}
           style={styles.input}
         />
-        <Pressable style={styles.confirmButton} onPress={onConfirmLocation}>
+        <Pressable
+          style={[styles.confirmButton, locating && styles.buttonDisabled]}
+          onPress={onConfirmLocation}
+          disabled={locating}
+        >
           <Text style={styles.confirmButtonText}>Conferma</Text>
         </Pressable>
+        {locationError && <Text style={styles.errorText}>{locationError}</Text>}
       </View>
     </LinearGradient>
   );
@@ -152,5 +172,14 @@ const styles = StyleSheet.create({
     color: colors.green700,
     fontFamily: fonts.headingBold,
     fontSize: 15,
+  },
+  buttonDisabled: {
+    opacity: 0.55,
+  },
+  errorText: {
+    color: colors.red,
+    fontSize: 13,
+    fontFamily: fonts.bodyMedium,
+    textAlign: 'center',
   },
 });

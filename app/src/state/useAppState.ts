@@ -1,6 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Catalog, DEMO_CATALOG, enrichProduct, eur, storesSortedFor } from '../data';
+import * as Location from 'expo-location';
+import {
+  Catalog,
+  DEMO_CATALOG,
+  enrichProduct,
+  eur,
+  storesSortedFor,
+  withDistances,
+} from '../data';
 import { fetchCatalog } from '../lib/catalog';
+import { GeoPosition, geocodePlace, reverseLabel } from '../lib/geocode';
 import { colors } from '../theme';
 
 export type Screen = 'location' | 'home' | 'search' | 'detail' | 'list' | 'profilo';
@@ -10,6 +19,9 @@ const DEFAULT_LOCATION = 'Milano, Zona Navigli';
 export function useAppState() {
   const [screen, setScreen] = useState<Screen>('location');
   const [locationLabel, setLocationLabel] = useState<string | null>(null);
+  const [userPos, setUserPos] = useState<GeoPosition | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
   const [capInput, setCapInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
@@ -45,14 +57,53 @@ export function useAppState() {
   const goLocation = () => setScreen('location');
   const goBack = () => setScreen('home');
 
-  const onUseGps = () => {
-    setLocationLabel(DEFAULT_LOCATION);
-    setScreen('home');
+  const onUseGps = async () => {
+    if (locating) return;
+    setLocating(true);
+    setLocationError(null);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setLocationError('Permesso negato: consenti la posizione o inserisci il CAP.');
+        return;
+      }
+      const loc = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      const pos = { lat: loc.coords.latitude, lon: loc.coords.longitude };
+      setUserPos(pos);
+      setLocationLabel(await reverseLabel(pos).catch(() => null) || 'La tua posizione');
+      setScreen('home');
+    } catch {
+      setLocationError('Posizione non disponibile: riprova o inserisci il CAP.');
+    } finally {
+      setLocating(false);
+    }
   };
-  const onConfirmLocation = () => {
-    const label = capInput.trim();
-    setLocationLabel(label || DEFAULT_LOCATION);
-    setScreen('home');
+
+  const onConfirmLocation = async () => {
+    if (locating) return;
+    const query = capInput.trim();
+    if (!query) {
+      setLocationError('Inserisci un CAP o una città.');
+      return;
+    }
+    setLocating(true);
+    setLocationError(null);
+    try {
+      const found = await geocodePlace(query);
+      if (!found) {
+        setLocationError('Località non trovata: controlla il CAP o il nome.');
+        return;
+      }
+      setUserPos(found.pos);
+      setLocationLabel(found.label);
+      setScreen('home');
+    } catch {
+      setLocationError('Ricerca non riuscita: controlla la connessione e riprova.');
+    } finally {
+      setLocating(false);
+    }
   };
 
   const selectCategory = (label: string) => {
@@ -86,7 +137,8 @@ export function useAppState() {
     });
 
   const derived = useMemo(() => {
-    const { stores, products } = catalog;
+    const { products } = catalog;
+    const stores = withDistances(catalog.stores, userPos);
     const resolvedLocationLabel = locationLabel || DEFAULT_LOCATION;
 
     const categories = catalog.categories.map(cat => ({
@@ -234,7 +286,7 @@ export function useAppState() {
       profileRows,
       tabColors,
     };
-  }, [screen, locationLabel, searchQuery, selectedProductId, detailQty, cart, catalog, dataSource]);
+  }, [screen, locationLabel, userPos, searchQuery, selectedProductId, detailQty, cart, catalog, dataSource]);
 
   return {
     screen,
@@ -242,6 +294,8 @@ export function useAppState() {
     searchQuery,
     detailQty,
     dataSource,
+    locating,
+    locationError,
     setCapInput,
     setSearchQuery,
     goHome,

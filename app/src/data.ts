@@ -1,4 +1,5 @@
 import { catColors } from './theme';
+import { GeoPosition } from './lib/geocode';
 
 export type StoreId = string;
 
@@ -7,7 +8,34 @@ export interface Store {
   name: string;
   initials: string;
   color: string;
+  // Distanza dal punto di riferimento di default (Milano Navigli); viene
+  // ricalcolata con withDistances() quando l'utente sceglie una posizione.
   distanceKm: number;
+  // Coordinate dei punti vendita della catena, per il ricalcolo.
+  coords: GeoPosition[];
+}
+
+// Milano, zona Navigli: posizione usata finché l'utente non ne sceglie una.
+export const DEFAULT_POSITION: GeoPosition = { lat: 45.4519, lon: 9.174 };
+
+export function haversineKm(a: GeoPosition, b: GeoPosition): number {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLon = toRad(b.lon - a.lon);
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLon / 2) ** 2;
+  return 6371 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+}
+
+/** Distanze ricalcolate dalla posizione dell'utente (negozio più vicino della catena). */
+export function withDistances(stores: Store[], pos: GeoPosition | null): Store[] {
+  if (!pos) return stores;
+  return stores.map(s =>
+    s.coords.length
+      ? { ...s, distanceKm: Math.min(...s.coords.map(c => haversineKm(pos, c))) }
+      : s
+  );
 }
 
 export interface Product {
@@ -33,13 +61,14 @@ export interface Catalog {
   categories: Category[];
 }
 
+// Le coordinate demo coincidono con i negozi di prova di supabase/demo_data.sql.
 export const STORES: Store[] = [
-  { id: 'esselunga', name: 'Esselunga', initials: 'ES', color: '#0B7A3B', distanceKm: 1.2 },
-  { id: 'conad', name: 'Conad', initials: 'CN', color: '#A8123A', distanceKm: 0.8 },
-  { id: 'coop', name: 'Coop', initials: 'CP', color: '#E0592B', distanceKm: 2.1 },
-  { id: 'carrefour', name: 'Carrefour', initials: 'CF', color: '#0B5FA5', distanceKm: 1.6 },
-  { id: 'lidl', name: 'Lidl', initials: 'LI', color: '#D9A400', distanceKm: 3.0 },
-  { id: 'eurospin', name: 'Eurospin', initials: 'EU', color: '#7C3AED', distanceKm: 2.4 },
+  { id: 'esselunga', name: 'Esselunga', initials: 'ES', color: '#0B7A3B', distanceKm: 1.2, coords: [{ lat: 45.4411, lon: 9.174 }] },
+  { id: 'conad', name: 'Conad', initials: 'CN', color: '#A8123A', distanceKm: 0.8, coords: [{ lat: 45.4591, lon: 9.174 }] },
+  { id: 'coop', name: 'Coop', initials: 'CP', color: '#E0592B', distanceKm: 2.1, coords: [{ lat: 45.433, lon: 9.174 }] },
+  { id: 'carrefour', name: 'Carrefour', initials: 'CF', color: '#0B5FA5', distanceKm: 1.6, coords: [{ lat: 45.4519, lon: 9.1945 }] },
+  { id: 'lidl', name: 'Lidl', initials: 'LI', color: '#D9A400', distanceKm: 3.0, coords: [{ lat: 45.4789, lon: 9.174 }] },
+  { id: 'eurospin', name: 'Eurospin', initials: 'EU', color: '#7C3AED', distanceKm: 2.4, coords: [{ lat: 45.4519, lon: 9.1433 }] },
 ];
 
 export const PRODUCTS: Product[] = [
