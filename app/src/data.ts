@@ -1,6 +1,6 @@
 import { catColors } from './theme';
 
-export type StoreId = 'esselunga' | 'conad' | 'coop' | 'carrefour' | 'lidl' | 'eurospin';
+export type StoreId = string;
 
 export interface Store {
   id: StoreId;
@@ -17,6 +17,20 @@ export interface Product {
   category: string;
   initials: string;
   prices: Record<StoreId, number>;
+}
+
+export interface Category {
+  label: string;
+  bg: string;
+  color: string;
+}
+
+// Il set completo di dati che alimenta l'app: arriva da Supabase quando il
+// progetto è collegato (vedi src/lib/catalog.ts), altrimenti dal demo qui sotto.
+export interface Catalog {
+  stores: Store[];
+  products: Product[];
+  categories: Category[];
 }
 
 export const STORES: Store[] = [
@@ -41,12 +55,27 @@ export const PRODUCTS: Product[] = [
   { id: 'detersivo', name: 'Detersivo Lavatrice', unit: '2L', category: 'Cura Casa', initials: 'DE', prices: { esselunga: 5.49, conad: 4.99, coop: 5.89, carrefour: 5.19, lidl: 4.49, eurospin: 4.69 } },
 ];
 
+export const DEMO_CATALOG: Catalog = {
+  stores: STORES,
+  products: PRODUCTS,
+  categories: Object.keys(catColors).map(label => ({
+    label,
+    bg: catColors[label].bg,
+    color: catColors[label].color,
+  })),
+};
+
+const FALLBACK_CAT = { bg: '#EEF1EC', color: '#6B7A72' };
+
 export function eur(n: number): string {
   return '€' + n.toFixed(2).replace('.', ',');
 }
 
-export function storesSortedFor(product: Product) {
-  return STORES.map(s => ({ store: s, price: product.prices[s.id] })).sort((a, b) => a.price - b.price);
+export function storesSortedFor(product: Product, stores: Store[]) {
+  return stores
+    .filter(s => product.prices[s.id] != null)
+    .map(s => ({ store: s, price: product.prices[s.id] }))
+    .sort((a, b) => a.price - b.price);
 }
 
 export interface EnrichedProduct extends Product {
@@ -59,12 +88,13 @@ export interface EnrichedProduct extends Product {
   savingsPctLabel: string;
 }
 
-export function enrichProduct(product: Product): EnrichedProduct {
-  const sorted = storesSortedFor(product);
+export function enrichProduct(product: Product, catalog: Catalog): EnrichedProduct {
+  const sorted = storesSortedFor(product, catalog.stores);
   const min = sorted[0];
   const max = sorted[sorted.length - 1];
-  const savingsPct = Math.round(((max.price - min.price) / max.price) * 100);
-  const cat = catColors[product.category];
+  const savingsPct = max.price > 0 ? Math.round(((max.price - min.price) / max.price) * 100) : 0;
+  const cat =
+    catalog.categories.find(c => c.label === product.category) ?? FALLBACK_CAT;
   return {
     ...product,
     tileBg: cat.bg,
