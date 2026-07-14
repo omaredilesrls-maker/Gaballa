@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react';
-import { PRODUCTS, StoreId, STORES, enrichProduct, eur, storesSortedFor } from '../data';
-import { catColors, colors } from '../theme';
+import { useEffect, useMemo, useState } from 'react';
+import { Catalog, DEMO_CATALOG, enrichProduct, eur, storesSortedFor } from '../data';
+import { fetchCatalog } from '../lib/catalog';
+import { colors } from '../theme';
 
 export type Screen = 'location' | 'home' | 'search' | 'detail' | 'list' | 'profilo';
 
@@ -14,6 +15,28 @@ export function useAppState() {
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [detailQty, setDetailQty] = useState(1);
   const [cart, setCart] = useState<Record<string, number>>({});
+
+  // Parte coi dati demo locali; se il progetto Supabase è configurato e ha
+  // prezzi, il catalogo vero li sostituisce appena arriva.
+  const [catalog, setCatalog] = useState<Catalog>(DEMO_CATALOG);
+  const [dataSource, setDataSource] = useState<'demo' | 'supabase'>('demo');
+
+  useEffect(() => {
+    let active = true;
+    fetchCatalog()
+      .then(remote => {
+        if (active && remote) {
+          setCatalog(remote);
+          setDataSource('supabase');
+        }
+      })
+      .catch(err => {
+        console.warn('Catalogo Supabase non disponibile, resto sui dati demo:', err);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const goHome = () => setScreen('home');
   const goSearch = () => setScreen('search');
@@ -63,30 +86,36 @@ export function useAppState() {
     });
 
   const derived = useMemo(() => {
+    const { stores, products } = catalog;
     const resolvedLocationLabel = locationLabel || DEFAULT_LOCATION;
 
-    const categories = Object.keys(catColors).map(label => ({
-      label,
-      bg: catColors[label].bg,
-      color: catColors[label].color,
-      border: catColors[label].bg,
+    const categories = catalog.categories.map(cat => ({
+      label: cat.label,
+      bg: cat.bg,
+      color: cat.color,
+      border: cat.bg,
     }));
 
     const q = searchQuery.trim().toLowerCase();
-    const filteredProducts = PRODUCTS.filter(
-      p => !q || p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q)
-    ).map(enrichProduct);
+    const filteredProducts = products
+      .filter(p => !q || p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q))
+      .map(p => enrichProduct(p, catalog));
 
-    const homeDeals = PRODUCTS.map(enrichProduct)
+    const homeDeals = products
+      .map(p => enrichProduct(p, catalog))
       .sort((a, b) => b.savingsPct - a.savingsPct)
       .slice(0, 4);
 
-    const cartEntries = Object.entries(cart).filter(([, qty]) => qty > 0);
+    // Il filtro sull'esistenza del prodotto protegge il carrello se il
+    // catalogo cambia (demo -> Supabase) dopo che un articolo è stato aggiunto.
+    const cartEntries = Object.entries(cart).filter(
+      ([id, qty]) => qty > 0 && products.some(p => p.id === id)
+    );
     const hasCartItems = cartEntries.length > 0;
 
     const cartItems = cartEntries.map(([id, qty]) => {
-      const product = PRODUCTS.find(p => p.id === id)!;
-      const enriched = enrichProduct(product);
+      const product = products.find(p => p.id === id)!;
+      const enriched = enrichProduct(product, catalog);
       return {
         ...enriched,
         qty,
@@ -95,13 +124,15 @@ export function useAppState() {
       };
     });
 
-    const storeTotalsRaw = STORES.map(store => {
-      const total = cartEntries.reduce((sum, [id, qty]) => {
-        const product = PRODUCTS.find(p => p.id === id)!;
-        return sum + product.prices[store.id] * qty;
-      }, 0);
-      return { store, total };
-    }).sort((a, b) => a.total - b.total);
+    const storeTotalsRaw = stores
+      .map(store => {
+        const total = cartEntries.reduce((sum, [id, qty]) => {
+          const product = products.find(p => p.id === id)!;
+          return sum + (product.prices[store.id] ?? 0) * qty;
+        }, 0);
+        return { store, total };
+      })
+      .sort((a, b) => a.total - b.total);
 
     const maxTotal = storeTotalsRaw.length ? storeTotalsRaw[storeTotalsRaw.length - 1].total : 0;
     const minTotal = storeTotalsRaw.length ? storeTotalsRaw[0].total : 0;
@@ -130,11 +161,12 @@ export function useAppState() {
       showDelta: boolean;
       deltaLabel: string;
     }[] = [];
+    let addButtonLabel = 'Aggiungi alla lista';
 
-    if (selectedProductId) {
-      const product = PRODUCTS.find(p => p.id === selectedProductId)!;
-      selectedProduct = enrichProduct(product);
-      const sorted = storesSortedFor(product);
+    const selected = selectedProductId ? products.find(p => p.id === selectedProductId) : null;
+    if (selected) {
+      selectedProduct = enrichProduct(selected, catalog);
+      const sorted = storesSortedFor(selected, stores);
       const min = sorted[0].price;
       storeRows = sorted.map((row, i) => ({
         storeName: row.store.name,
@@ -148,22 +180,15 @@ export function useAppState() {
         showDelta: i > 0,
         deltaLabel: eur(row.price - min),
       }));
+      addButtonLabel = 'Aggiungi alla lista · ' + eur(min * detailQty);
     }
-
-    const addButtonLabel =
-      'Aggiungi alla lista · ' +
-      (selectedProduct
-        ? eur(
-            selectedProduct.prices[storesSortedFor(selectedProduct)[0].store.id as StoreId] *
-              detailQty
-          )
-        : '');
 
     const profileRows = [
       { label: 'Notifiche offerte' },
       { label: 'Metodo di risparmio preferito' },
       { label: 'Supermercati preferiti' },
       { label: 'Informazioni' },
+      { label: dataSource === 'supabase' ? 'Dati prezzi: Supabase (live)' : 'Dati prezzi: demo locale' },
     ];
 
     const isHome = screen === 'home';
@@ -209,13 +234,14 @@ export function useAppState() {
       profileRows,
       tabColors,
     };
-  }, [screen, locationLabel, searchQuery, selectedProductId, detailQty, cart]);
+  }, [screen, locationLabel, searchQuery, selectedProductId, detailQty, cart, catalog, dataSource]);
 
   return {
     screen,
     capInput,
     searchQuery,
     detailQty,
+    dataSource,
     setCapInput,
     setSearchQuery,
     goHome,
