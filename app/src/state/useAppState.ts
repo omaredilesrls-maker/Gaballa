@@ -10,6 +10,7 @@ import {
 } from '../data';
 import { fetchCatalog } from '../lib/catalog';
 import { GeoPosition, geocodePlace, reverseLabel } from '../lib/geocode';
+import { nearbyChainDistancesKm } from '../lib/nearby';
 import { colors } from '../theme';
 
 export type Screen = 'location' | 'home' | 'search' | 'detail' | 'list' | 'profilo';
@@ -20,6 +21,9 @@ export function useAppState() {
   const [screen, setScreen] = useState<Screen>('location');
   const [locationLabel, setLocationLabel] = useState<string | null>(null);
   const [userPos, setUserPos] = useState<GeoPosition | null>(null);
+  // Distanza dal negozio reale più vicino di ogni catena (OpenStreetMap),
+  // calcolata quando l'utente sceglie una posizione.
+  const [nearbyKm, setNearbyKm] = useState<Record<string, number> | null>(null);
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [capInput, setCapInput] = useState('');
@@ -49,6 +53,32 @@ export function useAppState() {
       active = false;
     };
   }, []);
+
+  // Chiave stabile: demo e Supabase hanno le stesse catene, così il cambio
+  // di catalogo non fa ripartire la ricerca (Overpass rifiuta le richieste
+  // ravvicinate dallo stesso IP).
+  const chainNamesKey = catalog.stores
+    .map(s => s.name)
+    .sort()
+    .join('|');
+
+  useEffect(() => {
+    if (!userPos) {
+      setNearbyKm(null);
+      return;
+    }
+    let active = true;
+    nearbyChainDistancesKm(userPos, chainNamesKey.split('|'))
+      .then(d => {
+        if (active) setNearbyKm(d);
+      })
+      .catch(err => {
+        console.warn('Negozi vicini (OpenStreetMap) non disponibili:', err);
+      });
+    return () => {
+      active = false;
+    };
+  }, [userPos, chainNamesKey]);
 
   const goHome = () => setScreen('home');
   const goSearch = () => setScreen('search');
@@ -138,7 +168,12 @@ export function useAppState() {
 
   const derived = useMemo(() => {
     const { products } = catalog;
-    const stores = withDistances(catalog.stores, userPos);
+    // Distanze: prima i negozi reali vicini (OpenStreetMap), altrimenti i
+    // negozi noti a catalogo rispetto alla posizione scelta.
+    const stores = withDistances(catalog.stores, userPos).map(s => {
+      const km = nearbyKm?.[s.name.toLowerCase()];
+      return km != null ? { ...s, distanceKm: km } : s;
+    });
     const resolvedLocationLabel = locationLabel || DEFAULT_LOCATION;
 
     const categories = catalog.categories.map(cat => ({
@@ -286,7 +321,7 @@ export function useAppState() {
       profileRows,
       tabColors,
     };
-  }, [screen, locationLabel, userPos, searchQuery, selectedProductId, detailQty, cart, catalog, dataSource]);
+  }, [screen, locationLabel, userPos, nearbyKm, searchQuery, selectedProductId, detailQty, cart, catalog, dataSource]);
 
   return {
     screen,
