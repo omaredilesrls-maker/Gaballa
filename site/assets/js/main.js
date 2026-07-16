@@ -38,14 +38,18 @@
     });
   });
 
-  // Reveal on scroll
+  // Reveal on scroll (with safety net: nothing stays hidden)
+  var reveals=document.querySelectorAll('[data-reveal]');
+  function showAll(){reveals.forEach(function(el){el.style.opacity=1;el.style.transform='none';});}
   if('IntersectionObserver' in window){
     var io=new IntersectionObserver(function(entries){
       entries.forEach(function(en){ if(en.isIntersecting){en.target.style.opacity=1;en.target.style.transform='none';io.unobserve(en.target);} });
-    },{threshold:.12});
-    document.querySelectorAll('[data-reveal]').forEach(function(el){
+    },{threshold:.08,rootMargin:'0px 0px -8% 0px'});
+    reveals.forEach(function(el){
       el.style.opacity=0;el.style.transform='translateY(18px)';el.style.transition='opacity .6s ease, transform .6s ease';
       io.observe(el);
     });
+    // Safety net: guarantee everything is visible within 1.4s regardless of scroll
+    setTimeout(showAll,1400);
   }
 })();

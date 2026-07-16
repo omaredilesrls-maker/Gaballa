@@ -226,6 +226,14 @@ form.lead .full{grid-column:1/-1}
 
 .note-chip{display:inline-flex;gap:.4em;align-items:center;background:var(--sand-2);color:var(--brand);font-size:.72rem;font-weight:700;padding:.3em .7em;border-radius:999px;margin-bottom:14px}
 
+/* article */
+.article{font-size:1.05rem}
+.article .lead{font-size:1.18rem;color:var(--ink);font-weight:500}
+.article h2{font-size:1.4rem;color:var(--brand-deep);margin:1.7em 0 .4em}
+.article p{color:var(--ink-soft)}
+.callout-box{border-left:4px solid var(--terra);background:#fbf1ec;padding:14px 18px;border-radius:0 12px 12px 0;margin:1.5em 0;font-size:.98rem;color:var(--ink-soft)}
+.callout-box a{color:var(--terra);font-weight:700}
+
 /* ---------- responsive ---------- */
 @media(max-width:900px){
   .nav-menu,.nav-cta .btn-ghost{display:none}
