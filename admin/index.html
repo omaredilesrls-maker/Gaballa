@@ -61,6 +61,10 @@
       </div>
       <label>Categoria</label>
       <select id="np-categoria"></select>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:12px;">
+        <input id="np-halal" type="checkbox" checked style="width:auto;height:auto;">
+        Prodotto Halal (togli la spunta per maiale, alcolici, carne non halal)
+      </label>
       <label>Foto del prodotto (facoltativa)</label>
       <input id="np-foto" type="file" accept="image/*">
     </div>
@@ -211,6 +215,7 @@ $('salva').addEventListener('click', async () => {
         categoria_id: $('np-categoria').value,
         iniziali: iniziali.slice(0, 2),
         foto_url: fotoUrl,
+        halal: $('np-halal').checked,
       }).select('id').single();
       if (error) throw error;
       prodottoId = data.id;
@@ -264,17 +269,23 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 
 function renderTabellaOfferte() {
   const unita = ['g', 'kg', 'ml', 'l', 'pz'];
-  const testata = '<tr><th></th><th>Prodotto</th><th>Marca</th><th>Qtà</th><th>Unità</th><th>€</th><th>Categoria</th></tr>';
-  $('pdf-tabella').innerHTML = testata + offerteEstratte.map((o, i) => `
-    <tr data-i="${i}" style="border-top:1px solid var(--border);">
-      <td><input type="checkbox" class="sel" checked style="width:auto;height:auto;"></td>
+  const testata = '<tr><th>Importa</th><th>Prodotto</th><th>Marca</th><th>Qtà</th><th>Unità</th><th>€</th><th>Categoria</th><th>Halal</th></tr>';
+  $('pdf-tabella').innerHTML = testata + offerteEstratte.map((o, i) => {
+    // Halal true di default; l'AI marca false maiale/alcolici/carne non halal.
+    // Le righe non halal sono evidenziate e pre-escluse dall'importazione.
+    const halal = o.halal !== false;
+    return `
+    <tr data-i="${i}" style="border-top:1px solid var(--border);${halal ? '' : 'background:#FCEAEA;'}">
+      <td><input type="checkbox" class="sel" ${halal ? 'checked' : ''} style="width:auto;height:auto;"></td>
       <td><input class="f-nome" value="${esc(o.nome)}" style="min-width:140px;"></td>
       <td><input class="f-marca" value="${esc(o.marca)}" style="min-width:80px;"></td>
       <td><input class="f-quantita" type="number" step="any" value="${esc(o.quantita)}" style="width:70px;"></td>
       <td><select class="f-unita" style="width:64px;">${unita.map(u => `<option${u === o.unita ? ' selected' : ''}>${u}</option>`).join('')}</select></td>
       <td><input class="f-prezzo" type="number" step="0.01" value="${esc(o.prezzo)}" style="width:76px;"></td>
       <td><select class="f-categoria" style="min-width:120px;">${categorie.map(c => `<option${c.nome === o.categoria ? ' selected' : ''}>${esc(c.nome)}</option>`).join('')}</select></td>
-    </tr>`).join('');
+      <td style="text-align:center;"><input type="checkbox" class="f-halal" ${halal ? 'checked' : ''} style="width:auto;height:auto;"></td>
+    </tr>`;
+  }).join('');
 }
 
 $('pdf-analizza').addEventListener('click', async () => {
@@ -336,6 +347,7 @@ $('pdf-importa').addEventListener('click', async () => {
       const unita = r.querySelector('.f-unita').value;
       const prezzo = parseFloat(String(r.querySelector('.f-prezzo').value).replace(',', '.'));
       const categoria = r.querySelector('.f-categoria').value;
+      const halal = r.querySelector('.f-halal').checked;
       if (!nome || !(prezzo > 0) || !(quantita > 0)) continue;
 
       let prodottoId = prodotti.find(p => p.nome.trim().toLowerCase() === nome.toLowerCase())?.id;
@@ -343,7 +355,7 @@ $('pdf-importa').addEventListener('click', async () => {
         const cat = categorie.find(c => c.nome === categoria) ?? categorie[0];
         const iniziali = nome.split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase().padEnd(2, 'X').slice(0, 2);
         const { data, error } = await db.from('prodotto').insert({
-          nome, marca: marca || null, quantita, unita_misura: unita, categoria_id: cat.id, iniziali,
+          nome, marca: marca || null, quantita, unita_misura: unita, categoria_id: cat.id, iniziali, halal,
         }).select('id').single();
         if (error) throw error;
         prodottoId = data.id;

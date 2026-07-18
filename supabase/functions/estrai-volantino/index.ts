@@ -46,8 +46,13 @@ const SCHEMA = {
           unita: { type: "string", enum: ["g", "kg", "ml", "l", "pz"] },
           prezzo: { type: "number", description: "Prezzo finale in euro della confezione" },
           categoria: { type: "string", enum: CATEGORIE },
+          halal: {
+            type: "boolean",
+            description:
+              "true se il prodotto è halal; false per maiale e derivati, alcolici (vino, birra, liquori) e carne/insaccati non halal",
+          },
         },
-        required: ["nome", "marca", "quantita", "unita", "prezzo", "categoria"],
+        required: ["nome", "marca", "quantita", "unita", "prezzo", "categoria", "halal"],
         additionalProperties: false,
       },
     },
@@ -64,6 +69,7 @@ Regole:
 - Per confezioni multiple (es. 6x1,5L) somma la quantità totale (9 l).
 - Salta le offerte senza prezzo leggibile, i prodotti non alimentari/di consumo domestico e le offerte tipo "3x2" senza prezzo unitario.
 - "categoria" è la più adatta tra quelle disponibili.
+- "halal": metti false SOLO per prodotti chiaramente non halal — maiale e suoi derivati (prosciutto, salame, salsiccia, pancetta, guanciale, mortadella, wurstel, speck, lardo, bacon), bevande alcoliche (vino, birra, prosecco, spumante, liquori, aperitivi) e carne o insaccati di provenienza non halal. Per tutto il resto (frutta, verdura, latticini, pasta, pesce, pollo, manzo generico, dispensa, bevande analcoliche, cura casa) metti true.
 - Non inventare nulla: solo ciò che è scritto nel volantino.`;
 
 Deno.serve(async (req) => {

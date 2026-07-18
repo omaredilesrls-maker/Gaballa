@@ -28,6 +28,7 @@ interface ProdottoRow {
   unita_misura: string;
   iniziali: string;
   foto_url?: string | null;
+  halal?: boolean;
   categoria: { nome: string } | null;
 }
 
@@ -66,12 +67,12 @@ export async function fetchCatalog(): Promise<Catalog | null> {
     supabase.from('categoria').select('nome, colore_sfondo, colore_testo'),
     supabase
       .from('prodotto')
-      .select('id, nome, quantita, unita_misura, iniziali, foto_url, categoria:categoria_id (nome)'),
+      .select('id, nome, quantita, unita_misura, iniziali, foto_url, halal, categoria:categoria_id (nome)'),
     supabase.from('prezzo_effettivo').select('negozio_id, prodotto_id, prezzo_finale'),
   ]);
 
-  // Compatibilità: su un database che non ha ancora la colonna foto_url
-  // (migrazione foto non applicata) la select fallisce; riproviamo senza.
+  // Compatibilità: su un database che non ha ancora le colonne foto_url/halal
+  // (migrazioni non applicate) la select fallisce; riproviamo senza.
   const prodotti = prodottiTentativo.error
     ? await supabase
         .from('prodotto')
@@ -84,7 +85,11 @@ export async function fetchCatalog(): Promise<Catalog | null> {
   const catenaRows = (catene.data ?? []) as CatenaRow[];
   const negozioRows = (negozi.data ?? []) as NegozioRow[];
   const categoriaRows = (categorie.data ?? []) as CategoriaRow[];
-  const prodottoRows = (prodotti.data ?? []) as unknown as ProdottoRow[];
+  // Servizio Halal: mostriamo solo i prodotti halal. Se la colonna non c'è
+  // ancora (halal undefined) non filtriamo, per non svuotare il catalogo.
+  const prodottoRows = ((prodotti.data ?? []) as unknown as ProdottoRow[]).filter(
+    p => p.halal !== false
+  );
   const prezzoRows = (prezzi.data ?? []) as PrezzoRow[];
 
   if (!catenaRows.length || !prezzoRows.length) return null;
