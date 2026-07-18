@@ -131,9 +131,15 @@ export async function fetchCatalog(): Promise<Catalog | null> {
 
   const products: Product[] = prodottoRows.flatMap(p => {
     const perCatena = bestPrice.get(p.id);
-    if (!perCatena || !catenePrezzate.every(c => perCatena.has(c.id))) return [];
+    // Basta il prezzo in ALMENO una catena: i volantini reali sono di una
+    // sola catena, quindi pretendere il prezzo in tutte svuoterebbe l'app.
+    // Il confronto mostra solo le catene che hanno davvero quel prodotto.
+    if (!perCatena || perCatena.size === 0) return [];
     const prices: Record<string, number> = {};
-    for (const c of catenePrezzate) prices[c.id] = perCatena.get(c.id)!;
+    for (const c of catenePrezzate) {
+      const prezzo = perCatena.get(c.id);
+      if (prezzo != null) prices[c.id] = prezzo;
+    }
     return [
       {
         id: p.id,
