@@ -93,12 +93,25 @@ Deno.serve(async (req) => {
       return json({ error: "Percorso del PDF non valido." }, 400);
     }
 
+    // La chiave AI è nei secrets della funzione: se manca, errore chiaro.
+    const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!apiKey) {
+      return json({
+        error:
+          "Chiave AI non configurata: aggiungi il secret ANTHROPIC_API_KEY nelle Edge Functions del progetto Supabase.",
+      }, 500);
+    }
+
     const { data: blob, error: errFile } = await supabase.storage
       .from("immagini")
       .download(path);
     if (errFile || !blob) return json({ error: "PDF non trovato." }, 404);
-    if (blob.size > 25 * 1024 * 1024) {
-      return json({ error: "PDF troppo grande (max 25 MB)." }, 400);
+    // Il base64 gonfia il file di ~33%; sopra i 18 MB si rischia il limite
+    // di 32 MB per richiesta di Claude. Meglio dividere il volantino.
+    if (blob.size > 18 * 1024 * 1024) {
+      return json({
+        error: `PDF troppo grande (${(blob.size / 1024 / 1024).toFixed(1)} MB, max 18 MB). Carica poche pagine per volta.`,
+      }, 400);
     }
 
     // Base64 senza a-capo, a blocchi per non saturare lo stack.
@@ -110,7 +123,7 @@ Deno.serve(async (req) => {
     }
     const b64 = btoa(binary);
 
-    const anthropic = new Anthropic({ apiKey: Deno.env.get("ANTHROPIC_API_KEY")! });
+    const anthropic = new Anthropic({ apiKey });
 
     // Streaming per evitare timeout HTTP su PDF lunghi.
     const stream = anthropic.messages.stream({
