@@ -74,7 +74,7 @@
     <input id="volantino-foto" type="file" accept="image/*" capture="environment">
     <button class="primary" id="salva">Salva offerta</button>
     <div class="msg" id="offer-msg"></div>
-    <p class="hint">Il prezzo viene applicato a tutti i punti vendita della catena nella zona di Milano (fonte: volantino). Aggiorna i prezzi a ogni nuovo volantino: l'app mostra sempre l'ultima rilevazione.<br><br>⚠️ Un prodotto compare nell'app solo quando ha un prezzo in <b>tutte</b> le catene: dopo averlo creato, inserisci il suo prezzo per ognuna delle 6 catene.</p>
+    <p class="hint">Il prezzo viene applicato a tutti i punti vendita della catena nella zona di Milano (fonte: volantino). Aggiorna i prezzi a ogni nuovo volantino: l'app mostra sempre l'ultima rilevazione.<br><br>💡 Il prodotto compare nell'app appena una catena ha il suo prezzo; aggiungendo lo stesso prodotto anche dalle altre catene scatta il confronto e la percentuale di risparmio.</p>
   </div>
 
   <!-- ESTRAZIONE DA PDF -->
@@ -93,7 +93,7 @@
       <button class="primary" id="pdf-importa">Importa le offerte selezionate</button>
       <div class="msg" id="pdf-importa-msg"></div>
     </div>
-    <p class="hint">L'AI legge il PDF ed estrae prodotti e prezzi; tu controlli la tabella, correggi ed escludi quello che non va, poi importi. L'analisi richiede 1–3 minuti e costa pochi centesimi di credito AI per volantino. Per volantini molto lunghi, carica poche pagine per volta.<br><br>⚠️ Come sempre: un prodotto compare nell'app solo quando ha un prezzo in <b>tutte</b> le catene — importa i volantini di tutte e 6 per un confronto completo.</p>
+    <p class="hint">L'AI legge il PDF ed estrae prodotti e prezzi; tu controlli la tabella, correggi ed escludi quello che non va, poi importi. L'analisi richiede 1–3 minuti e costa pochi centesimi di credito AI per volantino. Per volantini molto lunghi o pesanti (oltre ~15 MB / 40 pagine) carica poche pagine per volta.</p>
   </div>
 
   <!-- FOTO PRODOTTO ESISTENTE -->
@@ -305,7 +305,16 @@ $('pdf-analizza').addEventListener('click', async () => {
 
     msg.textContent = "Analisi con l'AI in corso… (1–3 minuti, non chiudere la pagina)";
     const { data, error } = await db.functions.invoke('estrai-volantino', { body: { path } });
-    if (error) throw new Error(error.message || 'Funzione non raggiungibile: è stata pubblicata?');
+    if (error) {
+      // supabase-js nasconde il messaggio vero della funzione in error.context:
+      // lo estraiamo per mostrare la causa reale invece del generico "non-2xx".
+      let dettaglio = error.message || 'Funzione non raggiungibile: è stata pubblicata?';
+      try {
+        const body = await error.context?.json?.();
+        if (body?.error) dettaglio = body.error;
+      } catch (_) { /* corpo non leggibile: teniamo il messaggio generico */ }
+      throw new Error(dettaglio);
+    }
     if (data?.error) throw new Error(data.error);
     offerteEstratte = data?.offerte ?? [];
     if (!offerteEstratte.length) throw new Error('Nessuna offerta con prezzo trovata nel PDF.');
