@@ -162,7 +162,9 @@
           </div>
           <span class="lang">🗣️ نتكلم عربي وإيطالي · Parliamo arabo e italiano</span>
         </div>
-        <form class="lead" data-demo="true" name="corte-vittoria-ar" method="POST">
+        <form class="lead" name="corte-vittoria-ar" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/shukran.html">
+          <input type="hidden" name="form-name" value="corte-vittoria-ar">
+          <p hidden><label>لا تملأ هذا الحقل: <input name="bot-field"></label></p>
           <div class="row">
             <div><label>الاسم</label><input name="nome" required placeholder="محمد"></div>
             <div><label>الهاتف / واتساب</label><input name="telefono" placeholder="+39 ..."></div>

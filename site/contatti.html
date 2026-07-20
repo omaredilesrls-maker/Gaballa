@@ -57,7 +57,9 @@
       </div>
     </div>
     <div data-reveal>
-      <form class="lead" data-demo="true" name="contatti" method="POST">
+      <form class="lead" name="contatti" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/grazie.html">
+        <input type="hidden" name="form-name" value="contatti">
+        <p hidden><label>Non compilare: <input name="bot-field"></label></p>
         <div class="row">
           <div><label>Nome e cognome</label><input name="nome" required placeholder="Mario Rossi"></div>
           <div><label>Telefono</label><input name="telefono" placeholder="+39 ..."></div>
@@ -68,7 +70,6 @@
         <div class="full"><label>Messaggio</label><textarea name="messaggio" rows="4" placeholder="Scrivi qui..."></textarea></div>
         <button class="btn btn-primary full" type="submit">Invia richiesta</button>
         <p class="hint">Inviando accetti la privacy policy. Rispondiamo entro 24 ore.</p>
-        <div class="thanks">✓ Grazie! Ti ricontattiamo entro 24 ore.</div>
       </form>
     </div>
   </div>

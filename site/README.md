@@ -40,12 +40,16 @@ python3 -m http.server 8080
 
 In alternativa: **Vercel** (stesso flusso) o **GitHub Pages** (Settings → Pages → cartella `/site`).
 
-## Modulo contatti (attivare l'invio email)
+## Modulo contatti (Netlify Forms — attivo)
 
-I form sono pronti per **Netlify Forms**: in fase di deploy su Netlify basta
-togliere l'attributo `data-demo="true"` dai `<form>` e aggiungere `data-netlify="true"`.
-Le richieste arrivano nel pannello Netlify e via email.
-Alternative senza Netlify: [Formspree](https://formspree.io) — imposta l'`action` del form.
+I form usano già **Netlify Forms** (`data-netlify="true"` + campo nascosto `form-name`
++ honeypot `bot-field`). Dopo l'invio l'utente viene reindirizzato a `grazie.html`
+(o `shukran.html` per l'arabo). Le richieste vengono salvate nel pannello Netlify.
+
+**Unico passaggio manuale (nel pannello Netlify):** per ricevere le richieste via
+email, vai su **Forms → Form notifications → Add notification → Email notification**
+e inserisci l'indirizzo. I moduli presenti: `richiesta`, `contatti`, `corte-vittoria`,
+`corte-vittoria-ar`.
 
 ## Modificare i contenuti
 
