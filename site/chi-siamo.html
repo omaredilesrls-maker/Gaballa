@@ -97,7 +97,9 @@
         </div>
         <span class="lang">🗣️ Parliamo arabo e italiano · نتكلم عربي وإيطالي</span>
       </div>
-      <form class="lead" data-demo="true" name="contatti" method="POST">
+      <form class="lead" name="richiesta" method="POST" data-netlify="true" netlify-honeypot="bot-field" action="/grazie.html">
+        <input type="hidden" name="form-name" value="richiesta">
+        <p hidden><label>Non compilare: <input name="bot-field"></label></p>
         <div class="row">
           <div><label>Nome</label><input name="nome" required placeholder="Mario"></div>
           <div><label>Telefono</label><input name="telefono" placeholder="+39 ..."></div>
@@ -106,7 +108,6 @@
         <div class="full"><label>Messaggio</label><textarea name="messaggio" rows="3" placeholder="Descrivi il tuo progetto"></textarea></div>
         <button class="btn btn-primary full" type="submit">Invia richiesta</button>
         <p class="hint">Inviando accetti la privacy policy.</p>
-        <div class="thanks">✓ Grazie! Ti ricontattiamo entro 24 ore.</div>
       </form>
     </div>
   </div>
