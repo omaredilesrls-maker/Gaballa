@@ -7,7 +7,7 @@ Convive nello stesso repository con il sito Omar Edile (`site/`).
 
 1. Netlify → **Add new project → Import from GitHub** → questo repository.
 2. **Base directory: `ecodomus`** ← fondamentale, altrimenti viene pubblicato il sito sbagliato.
-   (Publish directory: `.` · Functions directory: `functions` — già nel `netlify.toml` locale.)
+   (Publish: `public` · Functions: `functions` — già nel `netlify.toml` locale.)
 3. Deploy. I deploy successivi partono a ogni push su `main`.
 
 ## Attivare l'IA del chatbot
@@ -25,11 +25,13 @@ Protezioni già incluse: rate limit 20 richieste/10 min per IP, messaggi troncat
 
 ```
 ecodomus/
-├─ index.html · servizi.html · progetti.html · chi-siamo.html
-├─ calcolatore.html · blog.html · contatti.html · 404.html · grazie.html
-├─ assets/ (css · js · img con il kit logo)
+├─ netlify.toml        (publish = "public" · functions = "functions")
 ├─ functions/chat.js   (chatbot serverless)
-└─ netlify.toml · sitemap.xml · robots.txt
+└─ public/             (i file del sito)
+   ├─ index.html · servizi.html · progetti.html · chi-siamo.html
+   ├─ calcolatore.html · blog.html · contatti.html · 404.html · grazie.html
+   ├─ assets/ (css · js · img con il kit logo)
+   └─ sitemap.xml · robots.txt
 ```
 
 ## Contatti progetto
