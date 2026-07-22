@@ -96,7 +96,11 @@
       add(q,'me');input.value='';history.push({role:'user',content:q});
       var typing=add('…','bot');
       fetch('/.netlify/functions/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:history})})
-        .then(function(r){if(!r.ok)throw 0;return r.json();})
+        .then(function(r){
+          if(r.status===429) return r.json(); // messaggio di limite, comunque leggibile
+          if(!r.ok) throw 0;
+          return r.json();
+        })
         .then(function(d){typing.textContent=d.reply||fallback(q);history.push({role:'assistant',content:typing.textContent});})
         .catch(function(){typing.textContent=fallback(q);});
     }
