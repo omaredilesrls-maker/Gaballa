@@ -1,7 +1,6 @@
-# Config del sito EcoDomus (secondo sito nello stesso repo).
-# In Netlify: crea un NUOVO sito, imposta "Base directory" = ecodomus
+# Config del sito EcoDomus (progetto Netlify con Base directory = ecodomus)
 [build]
-  publish = "."
+  publish = "public"
   functions = "functions"
 
 [[redirects]]
